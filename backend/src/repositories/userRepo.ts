@@ -6,10 +6,10 @@ export type UserDocument = typeof users.$inferSelect;
 export type BaseData = typeof users.$inferInsert;
 
 export type CreateUserData = Pick<BaseData, "name" | "email" | "password"> & {
-  role: "admin" | "customer" | "agent";
+  role?: "admin" | "customer" | "agent";
 };
 
-export type UpdateUserData = Partial<CreateUserData>;
+export type UpdateUserData = Partial<BaseData>;
 
 export const findByEmail = async (
   email: string,
