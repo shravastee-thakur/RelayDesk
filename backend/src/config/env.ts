@@ -18,6 +18,7 @@ export const envSchema = z.object({
 
   ACCESS_SECRET: z.string().min(1),
   REFRESH_SECRET: z.string().min(1),
+  ARCJET_KEY: z.string().min(1),
 });
 
 const _env = envSchema.safeParse(process.env);

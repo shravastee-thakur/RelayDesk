@@ -13,14 +13,14 @@ export type UpdateUserData = Partial<BaseData>;
 
 export const findByEmail = async (
   email: string,
-): Promise<UserDocument | undefined> => {
+): Promise<UserDocument | null> => {
   const [user] = await db.select().from(users).where(eq(users.email, email));
   return user;
 };
 
 export const findById = async (
   id: string,
-): Promise<UserDocument | undefined> => {
+): Promise<UserDocument | null> => {
   const [user] = await db.select().from(users).where(eq(users.id, id));
   return user;
 };
@@ -35,7 +35,7 @@ export const createUser = async (
 export const updateUser = async (
   id: string,
   userData: UpdateUserData,
-): Promise<UserDocument | undefined> => {
+): Promise<UserDocument | null> => {
   // early return check for empty userData
 
   if (Object.keys(userData).length === 0) {
