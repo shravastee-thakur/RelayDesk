@@ -16,6 +16,7 @@ export const ticketStatus = pgEnum("ticket_status", [
   "IN_PROGRESS",
   "RESOLVED",
   "CLOSED",
+  "CANCELLED",
 ]);
 
 export const ticketPriority = pgEnum("ticket_priority", [
@@ -54,6 +55,7 @@ export const tickets = pgTable(
   },
   (table) => [
     index("status_created_at_idx").on(table.status, table.createdAt),
+    index("agent_status_idx").on(table.agentId),
     index("customer_id_idx").on(table.customerId),
   ],
 );
