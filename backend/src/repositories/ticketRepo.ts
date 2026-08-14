@@ -1,4 +1,4 @@
-import { and, asc, count, eq, lt } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lt, or } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { tickets } from "../db/schema/ticketSchema.js";
 
@@ -43,12 +43,17 @@ export const findCustomerTickets = async (
   return customerTickets;
 };
 
-export const findWaitingTickets = async (): Promise<TicketDocument[]> => {
+export const findWaitingTickets = async (
+  limit: number = 20,
+  offset: number = 0,
+): Promise<TicketDocument[]> => {
   const ticket = await db
     .select()
     .from(tickets)
     .where(eq(tickets.status, "WAITING"))
-    .orderBy(asc(tickets.createdAt));
+    .orderBy(desc(tickets.priority), asc(tickets.createdAt))
+    .limit(limit)
+    .offset(offset);
   return ticket;
 };
 
@@ -64,15 +69,33 @@ export const findAgentTickets = async (
   return agentTickets;
 };
 
+// Define the hierarchy explicitly so TypeScript and SQL stay in sync
+const priorityRanks = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
+
 // If the person at the front of the line gets assigned, your ticket instantly becomes position 1 without a single database update.
-export const getQueuePosition = async (createdAt: Date): Promise<number> => {
+export const getQueuePosition = async (
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT",
+  createdAt: Date,
+): Promise<number> => {
+  // Find all priorities that rank higher than the current ticket
+  const currentIndex = priorityRanks.indexOf(priority);
+  const higherPriorities = priorityRanks.slice(currentIndex + 1);
+
+  // Find tickets that are EITHER in this list of higher priorities, OR are the exact same priority as me but arrived earlier (or part)
+  const priortyCondition =
+    higherPriorities.length > 0
+      ? or(
+          inArray(tickets.priority, higherPriorities),
+          and(eq(tickets.priority, priority), lt(tickets.createdAt, createdAt)),
+        )
+      : and(eq(tickets.priority, priority), lt(tickets.createdAt, createdAt));
+
   const [result] = await db
     .select({ count: count() })
     .from(tickets)
-    .where(
-      and(eq(tickets.status, "WAITING"), lt(tickets.createdAt, createdAt)),
-    );
+    .where(and(eq(tickets.status, "WAITING"), priortyCondition));
 
+  // Add 1 because a count of 0 means you are first in line
   return (result?.count ?? 0) + 1;
 };
 

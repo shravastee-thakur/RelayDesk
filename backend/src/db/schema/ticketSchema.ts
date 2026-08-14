@@ -41,7 +41,7 @@ export const tickets = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     description: text("description").notNull(),
     status: ticketStatus("status").default("WAITING").notNull(),
-    priority: ticketPriority("priority").default("LOW").notNull(),
+    priority: ticketPriority("priority").default("MEDIUM").notNull(),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
