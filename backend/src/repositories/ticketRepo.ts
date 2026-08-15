@@ -99,7 +99,7 @@ export const getQueuePosition = async (
   return (result?.count ?? 0) + 1;
 };
 
-export const updateStatus = async (
+export const updateTicket = async (
   ticketId: string,
   updates: UpdateTicketData,
 ): Promise<TicketDocument | null> => {

@@ -6,7 +6,6 @@ const insertTicketSchema = createInsertSchema(tickets);
 
 export const createTicketSchema = insertTicketSchema
   .pick({
-    customerId: true,
     title: true,
     description: true,
     priority: true,
@@ -23,13 +22,23 @@ export const createTicketSchema = insertTicketSchema
       .trim(),
   });
 
-export const updateTicketSchema = insertTicketSchema
-  .pick({
-    status: true,
-    priority: true,
-    agentId: true,
-  })
-  .partial(); // .partial() makes all these fields optional
+export const updateTicketStatusSchema = z.object({
+  status: z.enum([
+    "WAITING",
+    "ASSIGNED",
+    "IN_PROGRESS",
+    "RESOLVED",
+    "CLOSED",
+    "CANCELLED",
+  ]),
+});
+
+export const updateTicketPrioritySchema = z.object({
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
+});
 
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
-export type UpdateTicketInput = z.infer<typeof updateTicketSchema>;
+export type UpdateTicketStatusInput = z.infer<typeof updateTicketStatusSchema>;
+export type UpdateTicketPriorityInput = z.infer<
+  typeof updateTicketPrioritySchema
+>;

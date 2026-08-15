@@ -3,12 +3,14 @@ import logger from "../utils/logger.js";
 import { ApiError } from "../utils/apiError.js";
 import { verifyAccessToken } from "../utils/jwt.js";
 
+export type UserRole = "admin" | "customer" | "agent";
+
 declare global {
   namespace Express {
     interface Request {
       user?: {
         id: string;
-        role: string;
+        role: UserRole;
       };
     }
   }
@@ -34,7 +36,7 @@ export const authenticate = async (
 
     req.user = {
       id: decoded.id,
-      role: decoded.role,
+      role: decoded.role as UserRole,
     };
 
     next();

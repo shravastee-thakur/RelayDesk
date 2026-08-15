@@ -3,13 +3,15 @@ import { TicketDocument } from "../repositories/ticketRepo.js";
 import { ApiError } from "../utils/apiError.js";
 import {
   CreateTicketInput,
-  UpdateTicketInput,
+  UpdateTicketStatusInput,
+  UpdateTicketPriorityInput,
 } from "../validators/ticketValidator.js";
 
 export const createTicket = async (
+  customerId: string,
   ticketData: CreateTicketInput,
 ): Promise<TicketDocument> => {
-  const ticket = await ticketRepo.createTicket(ticketData);
+  const ticket = await ticketRepo.createTicket({ customerId, ...ticketData });
   if (!ticket) {
     throw new ApiError(500, "Problem in generating ticket");
   }
@@ -24,16 +26,23 @@ export const getCustomerTickets = async (
   return tickets;
 };
 
-export const getCustomerTicketDetails = async (ticketId: string) => {
+export const getCustomerTicketDetails = async (
+  ticketId: string,
+  customerId: string,
+): Promise<TicketDocument> => {
   const ticketDetails = await ticketRepo.findTicketById(ticketId);
   if (!ticketDetails) {
     throw new ApiError(404, "Tickets not found");
   }
 
+  if (ticketDetails.customerId !== customerId) {
+    throw new ApiError(403, "You cannot access this ticket");
+  }
+
   return ticketDetails;
 };
 
-export const getWaitingTickets = async (
+export const getAgentQueue = async (
   page: number = 1,
   limit: number = 20,
 ): Promise<TicketDocument[]> => {
@@ -43,20 +52,29 @@ export const getWaitingTickets = async (
   return queue;
 };
 
-export const assignNextTicket = async (agentId: string) => {
+export const assignNextTicket = async (
+  agentId: string,
+): Promise<TicketDocument> => {
   const ticket = await ticketRepo.assignNextTicket(agentId);
   if (!ticket) {
-    throw new ApiError(404, "No waiting tickets in the queue right now");
+    throw new ApiError(404, "No waiting tickets available");
   }
 
   return ticket;
 };
 
+// agent dashboard
+export const getAgentTickets = async (
+  agentId: string,
+): Promise<TicketDocument[]> => {
+  const tickets = await ticketRepo.findAgentTickets(agentId);
+  return tickets;
+};
+
 export const updateTicketStatus = async (
   ticketId: string,
   userId: string,
-  userRole: "customer" | "agent" | "admin",
-  updateData: UpdateTicketInput,
+  updateData: UpdateTicketStatusInput,
 ): Promise<TicketDocument> => {
   const ticket = await ticketRepo.findTicketById(ticketId);
   if (!ticket) {
@@ -68,19 +86,24 @@ export const updateTicketStatus = async (
     throw new ApiError(400, "Status is required");
   }
 
-  if (userRole === "customer") {
-    if (ticket.customerId !== userId || newStatus !== "CANCELLED") {
-      throw new ApiError(403, "Customer cannot perform this action");
+  if (ticket.status === "WAITING") {
+    // If it's waiting, only the customer who created it should be able to cancel it
+    if (ticket.customerId !== userId) {
+      throw new ApiError(
+        403,
+        "You do not have permission to cancel this ticket",
+      );
     }
-  }
-
-  if (userRole === "agent") {
+  } else {
+    // If an agent has picked it up, only that specific agent can update it
     if (ticket.agentId !== userId) {
       throw new ApiError(403, "You are not assigned to this ticket");
     }
   }
 
-  const allowedTransitions = {
+  type TicketStatus = TicketDocument["status"];
+
+  const allowedTransitions: Record<TicketStatus, TicketStatus[]> = {
     WAITING: ["CANCELLED"],
     ASSIGNED: ["IN_PROGRESS"],
     IN_PROGRESS: ["RESOLVED"],
@@ -93,7 +116,7 @@ export const updateTicketStatus = async (
     throw new ApiError(400, "Invalid status transition");
   }
 
-  const updated = await ticketRepo.updateStatus(ticketId, {
+  const updated = await ticketRepo.updateTicket(ticketId, {
     status: newStatus,
     ...(newStatus === "IN_PROGRESS" && { startedAt: new Date() }),
     ...(newStatus === "RESOLVED" && { resolvedAt: new Date() }),
@@ -105,3 +128,79 @@ export const updateTicketStatus = async (
 
   return updated;
 };
+
+export const updateTicketPriority = async (
+  ticketId: string,
+  userId: string,
+  updateData: UpdateTicketPriorityInput,
+): Promise<TicketDocument> => {
+  const ticket = await ticketRepo.findTicketById(ticketId);
+  if (!ticket) {
+    throw new ApiError(404, "Ticket not found");
+  }
+
+  // only assigned agent can modify priority
+  if (ticket.agentId !== userId) {
+    throw new ApiError(403, "You are not assigned to this ticket");
+  }
+
+  const updatedTicket = await ticketRepo.updateTicket(ticketId, {
+    priority: updateData.priority,
+  });
+
+  if (!updatedTicket) {
+    throw new ApiError(500, "Failed to update priority");
+  }
+
+  return updatedTicket;
+};
+
+// Ticket messages
+// Socket.IO real-time updates
+// Redis presence/online agents
+// Notifications
+
+// Customer
+//  |
+//  | creates ticket
+//  ↓
+// Database
+//  |
+//  ↓
+// Agent sees queue
+//  |
+//  ↓
+// Agent takes ticket
+//  |
+//  ↓
+// Agent starts work
+//  |
+//  ↓
+// Agent resolves
+//  |
+//  ↓
+// Customer closes
+
+// Customer
+//  |
+// Register/Login
+//  |
+// Create Ticket
+//  |
+// Ticket saved as WAITING
+
+// Agent
+//  |
+// Login
+//  |
+// View Queue
+//  |
+// Assign Next Ticket
+
+// Agent
+//  |
+// Update status
+
+// Customer
+//  |
+// See updated status
