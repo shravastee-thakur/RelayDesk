@@ -8,7 +8,6 @@ export const createTicketSchema = insertTicketSchema
   .pick({
     title: true,
     description: true,
-    priority: true,
   })
   .extend({
     title: z

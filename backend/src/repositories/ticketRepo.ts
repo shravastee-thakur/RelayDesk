@@ -120,7 +120,7 @@ export const assignNextTicket = async (
       .select()
       .from(tickets)
       .where(eq(tickets.status, "WAITING"))
-      .orderBy(asc(tickets.createdAt))
+      .orderBy(desc(tickets.priority), asc(tickets.createdAt))
       .limit(1)
       .for("update", { skipLocked: true });
 
@@ -137,3 +137,5 @@ export const assignNextTicket = async (
     return assignedTicket ?? null;
   });
 };
+
+

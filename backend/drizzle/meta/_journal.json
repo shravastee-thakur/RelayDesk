@@ -15,6 +15,13 @@
       "when": 1786530602946,
       "tag": "0001_happy_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786873760679,
+      "tag": "0002_secret_kat_farrell",
+      "breakpoints": true
     }
   ]
 }

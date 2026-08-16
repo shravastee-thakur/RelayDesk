@@ -1,6 +1,7 @@
 import * as ticketRepo from "../repositories/ticketRepo.js";
 import { TicketDocument } from "../repositories/ticketRepo.js";
 import { ApiError } from "../utils/apiError.js";
+import { calculatePriority } from "../utils/priorityCalculator.js";
 import {
   CreateTicketInput,
   UpdateTicketStatusInput,
@@ -11,7 +12,14 @@ export const createTicket = async (
   customerId: string,
   ticketData: CreateTicketInput,
 ): Promise<TicketDocument> => {
-  const ticket = await ticketRepo.createTicket({ customerId, ...ticketData });
+  const priority = calculatePriority(ticketData.title, ticketData.description);
+
+  const ticket = await ticketRepo.createTicket({
+    customerId,
+    title: ticketData.title,
+    description: ticketData.description,
+    priority,
+  });
   if (!ticket) {
     throw new ApiError(500, "Problem in generating ticket");
   }
@@ -74,6 +82,7 @@ export const getAgentTickets = async (
 export const updateTicketStatus = async (
   ticketId: string,
   userId: string,
+  userRole: string,
   updateData: UpdateTicketStatusInput,
 ): Promise<TicketDocument> => {
   const ticket = await ticketRepo.findTicketById(ticketId);
@@ -86,21 +95,22 @@ export const updateTicketStatus = async (
     throw new ApiError(400, "Status is required");
   }
 
-  if (ticket.status === "WAITING") {
-    // If it's waiting, only the customer who created it should be able to cancel it
-    if (ticket.customerId !== userId) {
-      throw new ApiError(
-        403,
-        "You do not have permission to cancel this ticket",
-      );
-    }
-  } else {
-    // If an agent has picked it up, only that specific agent can update it
-    if (ticket.agentId !== userId) {
-      throw new ApiError(403, "You are not assigned to this ticket");
+  if (userRole !== "admin") {
+    if (ticket.status === "WAITING") {
+      // If it's waiting, only the customer who created it should be able to cancel it
+      if (ticket.customerId !== userId) {
+        throw new ApiError(
+          403,
+          "You do not have permission to cancel this ticket",
+        );
+      }
+    } else {
+      // If an agent has picked it up, only that specific agent can update it
+      if (ticket.agentId !== userId) {
+        throw new ApiError(403, "You are not assigned to this ticket");
+      }
     }
   }
-
   type TicketStatus = TicketDocument["status"];
 
   const allowedTransitions: Record<TicketStatus, TicketStatus[]> = {
@@ -132,6 +142,7 @@ export const updateTicketStatus = async (
 export const updateTicketPriority = async (
   ticketId: string,
   userId: string,
+  userRole: string,
   updateData: UpdateTicketPriorityInput,
 ): Promise<TicketDocument> => {
   const ticket = await ticketRepo.findTicketById(ticketId);
@@ -140,7 +151,7 @@ export const updateTicketPriority = async (
   }
 
   // only assigned agent can modify priority
-  if (ticket.agentId !== userId) {
+  if (userRole !== "admin" && ticket.agentId !== userId) {
     throw new ApiError(403, "You are not assigned to this ticket");
   }
 
@@ -154,53 +165,3 @@ export const updateTicketPriority = async (
 
   return updatedTicket;
 };
-
-// Ticket messages
-// Socket.IO real-time updates
-// Redis presence/online agents
-// Notifications
-
-// Customer
-//  |
-//  | creates ticket
-//  ↓
-// Database
-//  |
-//  ↓
-// Agent sees queue
-//  |
-//  ↓
-// Agent takes ticket
-//  |
-//  ↓
-// Agent starts work
-//  |
-//  ↓
-// Agent resolves
-//  |
-//  ↓
-// Customer closes
-
-// Customer
-//  |
-// Register/Login
-//  |
-// Create Ticket
-//  |
-// Ticket saved as WAITING
-
-// Agent
-//  |
-// Login
-//  |
-// View Queue
-//  |
-// Assign Next Ticket
-
-// Agent
-//  |
-// Update status
-
-// Customer
-//  |
-// See updated status

@@ -4,30 +4,24 @@ import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
-
-// create ticket
 router.post(
   "/",
   authenticate,
   authorize("customer"),
   ticketController.createTicket,
 );
-
-// get Customer Tickets
-router.post(
+router.get(
   "/my",
   authenticate,
   authorize("customer"),
   ticketController.getCustomerTickets,
 );
-
 router.get(
   "/queue",
   authenticate,
-  authorize("agent"),
+  authorize("agent", "admin"),
   ticketController.getWaitingTickets,
 );
-
 router.post(
   "/assign-next",
   authenticate,
@@ -35,17 +29,30 @@ router.post(
   ticketController.assignNextTicket,
 );
 
-router.patch(
-  "/:ticketId/status",
+router.get(
+  "/:id",
   authenticate,
-  authorize("agent", "admin"),
+  authorize("customer"),
+  ticketController.getCustomerTicketDetails,
+);
+router.patch(
+  "/:id/status",
+  authenticate,
+  authorize("agent", "customer", "admin"),
   ticketController.updateTicketStatus,
 );
 
 router.patch(
-  "/:ticketId/priority",
+  "/:ticketId/cancel",
   authenticate,
-  authorize("agent"),
+  authorize("customer"),
+  ticketController.cancelTicket,
+);
+
+router.patch(
+  "/:id/priority",
+  authenticate,
+  authorize("agent", "admin"),
   ticketController.updateTicketPriority,
 );
 
