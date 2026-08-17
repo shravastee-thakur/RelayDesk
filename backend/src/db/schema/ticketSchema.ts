@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./userSchema.js";
 import { relations } from "drizzle-orm";
+import { ticketMessages } from "./ticketMessageSchema.js";
 
 export const ticketStatus = pgEnum("ticket_status", [
   "WAITING",
@@ -60,7 +61,7 @@ export const tickets = pgTable(
   ],
 );
 
-export const ticketRelations = relations(tickets, ({ one }) => ({
+export const ticketRelations = relations(tickets, ({ one, many }) => ({
   customer: one(users, {
     fields: [tickets.customerId],
     references: [users.id],
@@ -71,4 +72,5 @@ export const ticketRelations = relations(tickets, ({ one }) => ({
     references: [users.id],
     relationName: "agent_tickets",
   }),
+  messages: many(ticketMessages),
 }));

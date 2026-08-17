@@ -59,14 +59,49 @@ export const findWaitingTickets = async (
 
 export const findAgentTickets = async (
   agentId: string,
+  limit: number = 20,
+  offset: number = 0,
 ): Promise<TicketDocument[]> => {
   const agentTickets = await db
     .select()
     .from(tickets)
     .where(eq(tickets.agentId, agentId))
+    .orderBy(desc(tickets.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  return agentTickets;
+};
+
+export const findActiveAgentTickets = async (
+  agentId: string,
+): Promise<TicketDocument[]> => {
+  const agentTickets = await db
+    .select()
+    .from(tickets)
+    .where(
+      and(
+        eq(tickets.agentId, agentId),
+        inArray(tickets.status, ["ASSIGNED", "IN_PROGRESS"]),
+      ),
+    )
     .orderBy(asc(tickets.createdAt));
 
   return agentTickets;
+};
+
+export const countActiveAgentTickets = async (agentId: string) => {
+  const [result] = await db
+    .select({ count: count() })
+    .from(tickets)
+    .where(
+      and(
+        eq(tickets.agentId, agentId),
+        inArray(tickets.status, ["ASSIGNED", "IN_PROGRESS"]),
+      ),
+    );
+
+  return result.count;
 };
 
 // Define the hierarchy explicitly so TypeScript and SQL stay in sync
@@ -137,5 +172,3 @@ export const assignNextTicket = async (
     return assignedTicket ?? null;
   });
 };
-
-

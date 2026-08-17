@@ -60,9 +60,20 @@ export const getAgentQueue = async (
   return queue;
 };
 
+const MAX_ACTIVE_TICKETS = 5;
+
 export const assignNextTicket = async (
   agentId: string,
 ): Promise<TicketDocument> => {
+  const activeCount = await ticketRepo.countActiveAgentTickets(agentId);
+
+  if (activeCount >= MAX_ACTIVE_TICKETS) {
+    throw new ApiError(
+      400,
+      `You have reached the limit of ${MAX_ACTIVE_TICKETS} active tickets. Please resolve some before taking more.`,
+    );
+  }
+
   const ticket = await ticketRepo.assignNextTicket(agentId);
   if (!ticket) {
     throw new ApiError(404, "No waiting tickets available");
@@ -74,8 +85,18 @@ export const assignNextTicket = async (
 // agent dashboard
 export const getAgentTickets = async (
   agentId: string,
+  page: number = 1,
+  limit: number = 20,
 ): Promise<TicketDocument[]> => {
-  const tickets = await ticketRepo.findAgentTickets(agentId);
+  const offset = (page - 1) * limit;
+  const tickets = await ticketRepo.findAgentTickets(agentId, limit, offset);
+  return tickets;
+};
+
+export const getActiveAgentTickets = async (
+  agentId: string,
+): Promise<TicketDocument[]> => {
+  const tickets = await ticketRepo.findActiveAgentTickets(agentId);
   return tickets;
 };
 
@@ -164,4 +185,29 @@ export const updateTicketPriority = async (
   }
 
   return updatedTicket;
+};
+
+export const startTicket = async (
+  ticketId: string,
+  agentId: string,
+): Promise<TicketDocument> => {
+  return await updateTicketStatus(ticketId, agentId, "agent", {
+    status: "IN_PROGRESS",
+  });
+};
+
+export const resolveTicket = async (ticketId: string, agentId: string) => {
+  return await updateTicketStatus(ticketId, agentId, "agent", {
+    status: "RESOLVED",
+  });
+};
+
+export const closeTicket = async (
+  ticketId: string,
+  userId: string,
+  userRole: string,
+) => {
+  return await updateTicketStatus(ticketId, userId, userRole, {
+    status: "CLOSED",
+  });
 };

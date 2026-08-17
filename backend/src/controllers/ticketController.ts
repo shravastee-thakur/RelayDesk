@@ -110,8 +110,10 @@ export const getAgentTickets = async (
 ) => {
   try {
     const agentId = req.user?.id as string;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
 
-    const tickets = await ticketService.getAgentTickets(agentId);
+    const tickets = await ticketService.getAgentTickets(agentId, page, limit);
 
     res.status(200).json({
       success: true,
@@ -209,7 +211,149 @@ export const cancelTicket = async (
   }
 };
 
+export const getActiveAgentTickets = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const agentId = req.user?.id as string;
+    const tickets = await ticketService.getActiveAgentTickets(agentId);
+    res.status(200).json({ success: true, data: tickets });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const startTicket = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const ticketId = req.params.id as string;
+    const agentId = req.user?.id as string;
+    const updatedTicket = await ticketService.startTicket(ticketId, agentId);
+    res
+      .status(200)
+      .json({ success: true, message: "Ticket started", data: updatedTicket });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resolveTicket = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const ticketId = req.params.id as string;
+    const agentId = req.user?.id as string;
+    const updatedTicket = await ticketService.resolveTicket(ticketId, agentId);
+    res
+      .status(200)
+      .json({ success: true, message: "Ticket resolved", data: updatedTicket });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const closeTicket = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const ticketId = req.params.id as string;
+    const userId = req.user?.id as string;
+    const userRole = req.user?.role as string;
+    const updatedTicket = await ticketService.closeTicket(
+      ticketId,
+      userId,
+      userRole,
+    );
+    res
+      .status(200)
+      .json({ success: true, message: "Ticket closed", data: updatedTicket });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Agent Management: Right now, your user registration defaults everyone to "customer". You need a dedicated POST /api/users/agent route restricted entirely to the Admin role. This is how you hire and fire support staff.
 // Forced Reassignment: If an agent calls in sick or abandons a ticket, the Admin needs a way to manually reassign an active ticket to a different agent. You will eventually need an updateTicketAgent service function.
 // Analytics Dashboard: The Admin interface requires aggregate statistics. You need a new GET /api/admin/stats route that runs SQL queries to calculate average time to assign and average time to resolve based on your timestamp columns.
 
+// ✅ Authentication
+
+// ✅ Ticket schema
+
+// ✅ Ticket repository/service/controller
+
+// ✅ Priority calculation
+
+// ✅ Agent workflow improvement
+
+// ⬜ Ticket messages schema + CRUD
+
+// ⬜ Socket.IO:
+//       - queue updates
+//       - ticket assignment events
+//       - real-time chat
+
+// ⬜ Ticket history
+
+// ⬜ Redis:
+//       - online agents
+//       - distributed locks
+//       - caching
+
+// ⬜ Deployment improvements
+
+// ticket_messages
+
+// id
+// ticket_id
+// sender_id
+// message
+// created_at
+
+// 8. Admin
+
+// Admin is simple.
+
+// Admin sees:
+
+// Total tickets
+// Active agents
+// Average resolution time
+
+// Queries:
+
+// How many tickets today?
+
+// How many unresolved?
+
+// Which agent solved most?
+
+// src
+
+// modules
+
+//  ├── auth
+//  │
+//  ├── users
+//  │
+//  ├── tickets
+//  │
+//  ├── messages
+//  │
+//  ├── queue
+//  │
+//  └── agents
+
+// socket
+
+//  ├── ticketEvents.ts
+//  ├── presenceEvents.ts
