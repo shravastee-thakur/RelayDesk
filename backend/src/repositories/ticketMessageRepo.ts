@@ -1,22 +1,25 @@
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { ticketMessages } from "../db/schema/ticketMessageSchema.js";
 
 export type MessageDocument = typeof ticketMessages.$inferSelect;
-export type BaseMessageData = typeof ticketMessages.$inferInsert;
-
-export type CreateMessageData = Pick<
-  BaseMessageData,
-  "ticketId" | "senderId" | "message"
->;
+export type CreateMessageData = typeof ticketMessages.$inferInsert;
 
 export const createMessage = async (
-  messageData: CreateMessageData,
+  data: CreateMessageData,
 ): Promise<MessageDocument> => {
-  const [messages] = await db.insert(ticketMessages).values(messageData);
-  return messages;
+  const [message] = await db.insert(ticketMessages).values(data).returning();
+  return message;
 };
 
-export const getTicketMessages = async (): Promise<MessageDocument[]> => {
-  const [messages] = await db.select().from(ticketMessages).where(eq())
+export const getMessagesByTicketId = async (
+  ticketId: string,
+): Promise<MessageDocument[]> => {
+  const messages = await db
+    .select()
+    .from(ticketMessages)
+    .where(eq(ticketMessages.ticketId, ticketId))
+    .orderBy(asc(ticketMessages.createdAt));
+
+  return messages;
 };

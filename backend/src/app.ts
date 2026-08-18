@@ -6,6 +6,7 @@ import helmet from "helmet";
 
 import userRoute from "./routes/userRoutes.js";
 import ticketRoute from "./routes/ticketRoutes.js";
+import messageRoute from "./routes/messageRoutes.js";
 
 import { errorHandler } from "./middlewares/errorMiddleware.js";
 
@@ -28,6 +29,9 @@ app.use("/api/users", userRoute);
 
 app.use("/api/tickets", ticketRoute);
 // http://localhost:3000/api/tickets/
+
+app.use("/api/tickets", messageRoute);
+// http://localhost:3000/api/tickets/:ticketId/messages
 
 app.use(errorHandler);
 
