@@ -34,17 +34,27 @@ export const getCustomerTickets = async (
   return tickets;
 };
 
-export const getCustomerTicketDetails = async (
+export const getTicketDetails = async (
   ticketId: string,
-  customerId: string,
+  userId: string,
+  userRole: string,
 ): Promise<TicketDocument> => {
   const ticketDetails = await ticketRepo.findTicketById(ticketId);
   if (!ticketDetails) {
     throw new ApiError(404, "Tickets not found");
   }
 
-  if (ticketDetails.customerId !== customerId) {
+  if (userRole === "admin") {
+    return ticketDetails;
+  }
+
+  // Customers can only see tickets they created
+  if (userRole === "customer" && ticketDetails.customerId !== userId) {
     throw new ApiError(403, "You cannot access this ticket");
+  }
+  // Agents can only see tickets assigned to them
+  if (userRole === "agent" && ticketDetails.agentId !== userId) {
+    throw new ApiError(403, "You can only view tickets assigned to you");
   }
 
   return ticketDetails;

@@ -45,14 +45,14 @@ router.get(
   authenticate,
   authorize("agent"),
   ticketController.getAgentTickets,
-); // <-- Added here!
+);
 
 // Get Specific Ticket
 router.get(
   "/:id",
   authenticate,
-  authorize("customer"),
-  ticketController.getCustomerTicketDetails,
+  authorize("customer", "agent", "admin"),
+  ticketController.getTicketDetails,
 );
 
 // Explicit Actions

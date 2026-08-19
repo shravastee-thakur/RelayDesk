@@ -43,18 +43,20 @@ export const getCustomerTickets = async (
   }
 };
 
-export const getCustomerTicketDetails = async (
+export const getTicketDetails = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const ticketId = req.params.id as string;
-    const customerId = req.user?.id as string;
+    const userId = req.user?.id as string;
+    const userRole = req.user?.role as string;
 
-    const tickets = await ticketService.getCustomerTicketDetails(
+    const tickets = await ticketService.getTicketDetails(
       ticketId,
-      customerId,
+      userId,
+      userRole,
     );
     return res.status(200).json({ success: true, data: tickets });
   } catch (error) {
@@ -295,9 +297,9 @@ export const closeTicket = async (
 
 // ✅ Agent workflow improvement
 
-// ⬜ Ticket messages schema + CRUD
+// ✅ Ticket messages schema + CRUD
 
-// ⬜ Socket.IO:
+// ⬜ Socket.IO: (Socket.IO Integration layer)
 //       - queue updates
 //       - ticket assignment events
 //       - real-time chat
@@ -311,36 +313,18 @@ export const closeTicket = async (
 
 // ⬜ Deployment improvements
 
-// ticket_messages
-
-// id
-// ticket_id
-// sender_id
-// message
-// created_at
-
 // 8. Admin
-
 // Admin is simple.
-
 // Admin sees:
-
 // Total tickets
 // Active agents
 // Average resolution time
-
 // Queries:
-
 // How many tickets today?
-
 // How many unresolved?
-
 // Which agent solved most?
-
 // src
-
 // modules
-
 //  ├── auth
 //  │
 //  ├── users
@@ -352,8 +336,6 @@ export const closeTicket = async (
 //  ├── queue
 //  │
 //  └── agents
-
 // socket
-
 //  ├── ticketEvents.ts
 //  ├── presenceEvents.ts
