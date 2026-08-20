@@ -1,5 +1,6 @@
 import * as ticketRepo from "../repositories/ticketRepo.js";
 import { TicketDocument } from "../repositories/ticketRepo.js";
+import * as socketEmitter from "../sockets/socketEmitter.js";
 import { ApiError } from "../utils/apiError.js";
 import { calculatePriority } from "../utils/priorityCalculator.js";
 import {
@@ -23,6 +24,8 @@ export const createTicket = async (
   if (!ticket) {
     throw new ApiError(500, "Problem in generating ticket");
   }
+
+  socketEmitter.emitToAgentDashboard("ticket_created", ticket);
 
   return ticket;
 };
@@ -88,6 +91,9 @@ export const assignNextTicket = async (
   if (!ticket) {
     throw new ApiError(404, "No waiting tickets available");
   }
+
+  socketEmitter.emitToAgentDashboard("ticket_assigned", ticket);
+  socketEmitter.emitToTicketRoom(ticket.id, "ticket_assigned", ticket);
 
   return ticket;
 };
@@ -166,6 +172,9 @@ export const updateTicketStatus = async (
   if (!updated) {
     throw new ApiError(500, "Failed to update ticket");
   }
+
+  socketEmitter.emitToTicketRoom(updated.id, "ticket_status_updated", updated);
+  socketEmitter.emitToAgentDashboard("ticket_status_updated", updated);
 
   return updated;
 };

@@ -3,6 +3,7 @@ import http from "http";
 import { env } from "../config/env.js";
 import { socketAuth } from "./socketAuth.js";
 import logger from "../utils/logger.js";
+import { registerTicketSocketEvents } from "./ticketSocket.js";
 
 // We export the io instance so our future socketEmitter can use it
 export let io: SocketIOServer;
@@ -22,21 +23,15 @@ export const initializeSocket = (server: http.Server) => {
   // Handle the connection and attach event listeners
   io.on("connection", (socket: Socket) => {
     const user = socket.data.user;
+    if (user.role === "agent" || user.role === "admin") {
+      socket.join("agent_dashboard");
+    }
+
     console.log(
       `[Socket.IO] New connection: ${socket.id} for User: ${user.id}`,
     );
 
-    socket.on("join_tickets", (ticketId: string) => {
-      const room = `ticket:${ticketId}`;
-      socket.join(room);
-      logger.info(`[Socket.IO] User ${user.id} joined room ${room}`);
-    });
-
-    socket.on("leave_tickets", (ticketId: string) => {
-      const room = `ticket:${ticketId}`;
-      socket.leave(room);
-      console.log(`[Socket.IO] User ${user.id} left room ${room}`);
-    });
+    registerTicketSocketEvents(socket);
 
     socket.on("disconnect", () => {
       console.log(`[Socket.IO] Disconnected: ${socket.id}`);

@@ -291,18 +291,19 @@ export const closeTicket = async (
 
 // ✅ Ticket schema
 
-// ✅ Ticket repository/service/controller
+// ✅ Ticket repository/service/controller 1
 
 // ✅ Priority calculation
 
-// ✅ Agent workflow improvement
+// ✅ Agent workflow improvement 2
 
-// ✅ Ticket messages schema + CRUD
+// ✅ Ticket messages schema + CRUD 3
 
-// ⬜ Socket.IO: (Socket.IO Integration layer)
+// ✅ Socket.IO: (Socket.IO Integration layer) 4
+//        - real-time chat
 //       - queue updates
 //       - ticket assignment events
-//       - real-time chat
+//       
 
 // ⬜ Ticket history
 
