@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as ticketService from "../services/ticketService.js";
+import * as ticketHistoryService from "../services/ticketHistoryService.js";
 import {
   createTicketSchema,
   updateTicketPrioritySchema,
@@ -283,60 +284,61 @@ export const closeTicket = async (
   }
 };
 
-// Agent Management: Right now, your user registration defaults everyone to "customer". You need a dedicated POST /api/users/agent route restricted entirely to the Admin role. This is how you hire and fire support staff.
-// Forced Reassignment: If an agent calls in sick or abandons a ticket, the Admin needs a way to manually reassign an active ticket to a different agent. You will eventually need an updateTicketAgent service function.
-// Analytics Dashboard: The Admin interface requires aggregate statistics. You need a new GET /api/admin/stats route that runs SQL queries to calculate average time to assign and average time to resolve based on your timestamp columns.
+export const getTicketHistory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const ticketId = req.params.id as string;
+    const userId = req.user?.id as string;
+    const userRole = req.user?.role as string;
+
+    const history = await ticketHistoryService.getHistory(
+      ticketId,
+      userId,
+      userRole,
+    );
+
+    return res.status(200).json({ success: true, data: history });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 // ✅ Authentication
 
 // ✅ Ticket schema
 
-// ✅ Ticket repository/service/controller 1
+// ✅ Ticket repository/service/controller
 
 // ✅ Priority calculation
 
-// ✅ Agent workflow improvement 2
+// ✅ Agent workflow improvement
 
-// ✅ Ticket messages schema + CRUD 3
+// ✅ Ticket messages schema + CRUD
 
-// ✅ Socket.IO: (Socket.IO Integration layer) 4
-//        - real-time chat
-//       - queue updates
-//       - ticket assignment events
-//       
+// ✅ Socket.IO integration
+//     - chat
+//     - queue updates
+//     - assignment events
 
-// ⬜ Ticket history
+// ✅ Ticket history
 
-// ⬜ Redis:
-//       - online agents
-//       - distributed locks
-//       - caching
+// ⬜ Admin module
+//     1. Admin ticket dashboard API
+//        - view all tickets
+//     2. Agent management
+//        - create agent
+//        - list agents
+//        - deactivate agent
+//     3. Ticket reassignment
+//     4. Admin statistics
+
+// ⬜ Redis
+//     - online agents
+//     - distributed locks
+//     - caching
 
 // ⬜ Deployment improvements
-
-// 8. Admin
-// Admin is simple.
-// Admin sees:
-// Total tickets
-// Active agents
-// Average resolution time
-// Queries:
-// How many tickets today?
-// How many unresolved?
-// Which agent solved most?
-// src
-// modules
-//  ├── auth
-//  │
-//  ├── users
-//  │
-//  ├── tickets
-//  │
-//  ├── messages
-//  │
-//  ├── queue
-//  │
-//  └── agents
-// socket
-//  ├── ticketEvents.ts
-//  ├── presenceEvents.ts

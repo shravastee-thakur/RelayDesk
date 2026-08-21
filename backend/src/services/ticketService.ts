@@ -9,6 +9,8 @@ import {
   UpdateTicketPriorityInput,
 } from "../validators/ticketValidator.js";
 
+import * as ticketHistoryService from "../services/ticketHistoryService.js";
+
 export const createTicket = async (
   customerId: string,
   ticketData: CreateTicketInput,
@@ -24,6 +26,13 @@ export const createTicket = async (
   if (!ticket) {
     throw new ApiError(500, "Problem in generating ticket");
   }
+
+  await ticketHistoryService.recordHistory({
+    ticketId: ticket.id,
+    changedBy: customerId,
+    action: "CREATED",
+    newStatus: ticket.status,
+  });
 
   socketEmitter.emitToAgentDashboard("ticket_created", ticket);
 
@@ -92,6 +101,14 @@ export const assignNextTicket = async (
     throw new ApiError(404, "No waiting tickets available");
   }
 
+  await ticketHistoryService.recordHistory({
+    ticketId: ticket.id,
+    changedBy: agentId,
+    action: "ASSIGNED",
+    oldStatus: "WAITING",
+    newStatus: ticket.status,
+  });
+
   socketEmitter.emitToAgentDashboard("ticket_assigned", ticket);
   socketEmitter.emitToTicketRoom(ticket.id, "ticket_assigned", ticket);
 
@@ -131,6 +148,14 @@ export const updateTicketStatus = async (
   if (!newStatus) {
     throw new ApiError(400, "Status is required");
   }
+
+  await ticketHistoryService.recordHistory({
+    ticketId,
+    changedBy: userId,
+    action: "STATUS_CHANGED",
+    oldStatus: ticket.status,
+    newStatus: newStatus,
+  });
 
   if (userRole !== "admin") {
     if (ticket.status === "WAITING") {
