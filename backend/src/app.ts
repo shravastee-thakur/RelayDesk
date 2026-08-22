@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 import userRoute from "./routes/userRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import ticketRoute from "./routes/ticketRoutes.js";
 import messageRoute from "./routes/messageRoutes.js";
 
@@ -26,6 +27,9 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 // Routes
 app.use("/api/users", userRoute);
 // http://localhost:3000/api/users/
+
+app.use("/api/admin", adminRoutes);
+// http://localhost:3000/api/admin/agents
 
 app.use("/api/tickets", ticketRoute);
 // http://localhost:3000/api/tickets/

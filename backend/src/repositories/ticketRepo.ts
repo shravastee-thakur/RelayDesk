@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, inArray, lt, or } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { tickets } from "../db/schema/ticketSchema.js";
+import { users } from "../db/schema/userSchema.js";
 
 export type TicketDocument = typeof tickets.$inferSelect;
 export type BaseTicketData = typeof tickets.$inferInsert;
@@ -104,36 +105,6 @@ export const countActiveAgentTickets = async (agentId: string) => {
   return result.count;
 };
 
-// Define the hierarchy explicitly so TypeScript and SQL stay in sync
-const priorityRanks = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
-
-// If the person at the front of the line gets assigned, your ticket instantly becomes position 1 without a single database update.
-export const getQueuePosition = async (
-  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT",
-  createdAt: Date,
-): Promise<number> => {
-  // Find all priorities that rank higher than the current ticket
-  const currentIndex = priorityRanks.indexOf(priority);
-  const higherPriorities = priorityRanks.slice(currentIndex + 1);
-
-  // Find tickets that are EITHER in this list of higher priorities, OR are the exact same priority as me but arrived earlier (or part)
-  const priortyCondition =
-    higherPriorities.length > 0
-      ? or(
-          inArray(tickets.priority, higherPriorities),
-          and(eq(tickets.priority, priority), lt(tickets.createdAt, createdAt)),
-        )
-      : and(eq(tickets.priority, priority), lt(tickets.createdAt, createdAt));
-
-  const [result] = await db
-    .select({ count: count() })
-    .from(tickets)
-    .where(and(eq(tickets.status, "WAITING"), priortyCondition));
-
-  // Add 1 because a count of 0 means you are first in line
-  return (result?.count ?? 0) + 1;
-};
-
 export const updateTicket = async (
   ticketId: string,
   updates: UpdateTicketData,
@@ -171,4 +142,73 @@ export const assignNextTicket = async (
 
     return assignedTicket ?? null;
   });
+};
+
+// Admin
+export const findAllTickets = async (
+  limit: number = 20,
+  offset: number = 0,
+) => {
+  const allTickets = await db.query.tickets.findMany({
+    columns: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      createdAt: true,
+    },
+    with: {
+      customer: {
+        columns: { id: true, name: true, email: true },
+      },
+      agent: {
+        columns: { id: true, name: true, email: true },
+      },
+    },
+    orderBy: desc(tickets.createdAt),
+    limit,
+    offset,
+  });
+
+  return allTickets;
+};
+
+export const getTicketStats = async () => {
+  // Fire all queries at the exact same time
+  const [total, waiting, assigned, inProgress, resolved] = await Promise.all([
+    db.select({ count: count() }).from(tickets),
+    db
+      .select({ count: count() })
+      .from(tickets)
+      .where(eq(tickets.status, "WAITING")),
+    db
+      .select({ count: count() })
+      .from(tickets)
+      .where(eq(tickets.status, "ASSIGNED")),
+    db
+      .select({ count: count() })
+      .from(tickets)
+      .where(eq(tickets.status, "IN_PROGRESS")),
+    db
+      .select({ count: count() })
+      .from(tickets)
+      .where(eq(tickets.status, "RESOLVED")),
+  ]);
+
+  return {
+    totalTickets: total[0].count,
+    waiting: waiting[0].count,
+    assigned: assigned[0].count,
+    inProgress: inProgress[0].count,
+    resolved: resolved[0].count,
+  };
+};
+
+export const getActiveAgentCount = async () => {
+  const agents = await db
+    .select({ count: count() })
+    .from(users)
+    .where(eq(users.role, "agent"));
+
+  return agents[0].count;
 };

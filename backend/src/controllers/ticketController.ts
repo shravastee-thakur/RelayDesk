@@ -306,39 +306,62 @@ export const getTicketHistory = async (
   }
 };
 
+export const getAllTickets = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+
+    const tickets = await ticketService.getAllTickets(page, limit);
+
+    return res.status(200).json({
+      success: true,
+      count: tickets.length,
+      data: tickets,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 // ✅ Authentication
 
 // ✅ Ticket schema
 
-// ✅ Ticket repository/service/controller
+// ✅ Ticket CRUD
 
 // ✅ Priority calculation
 
-// ✅ Agent workflow improvement
+// ✅ Agent workflow
 
-// ✅ Ticket messages schema + CRUD
+// ✅ Ticket messages
 
-// ✅ Socket.IO integration
-//     - chat
+// ✅ Socket.IO
+//     - real-time chat
 //     - queue updates
 //     - assignment events
 
 // ✅ Ticket history
 
-// ⬜ Admin module
-//     1. Admin ticket dashboard API
-//        - view all tickets
-//     2. Agent management
-//        - create agent
-//        - list agents
-//        - deactivate agent
-//     3. Ticket reassignment
-//     4. Admin statistics
+// ✅ Admin module
+
+//     1. View all tickets
+//        GET /api/tickets/admin
+
+//     2. Create agents
+//        POST /api/admin/create-agent
+
+//     3. Basic statistics
+//        GET /api/admin/stats
 
 // ⬜ Redis
+
 //     - online agents
-//     - distributed locks
 //     - caching
 
 // ⬜ Deployment improvements

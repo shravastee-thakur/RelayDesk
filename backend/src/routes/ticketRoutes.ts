@@ -46,6 +46,14 @@ router.get(
   authorize("agent"),
   ticketController.getAgentTickets,
 );
+
+router.get(
+  "/admin",
+  authenticate,
+  authorize("admin"),
+  ticketController.getAllTickets,
+);
+
 router.get(
   "/:id/history",
   authenticate,

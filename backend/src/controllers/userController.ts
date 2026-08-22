@@ -19,7 +19,6 @@ export const createUser = async (
     const validatedData = registerSchema.parse(req.body);
 
     const user = await userService.createUser(validatedData);
-   
 
     return res.status(201).json({
       success: true,

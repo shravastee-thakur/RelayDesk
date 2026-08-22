@@ -3,6 +3,7 @@ import * as userRepo from "../repositories/userRepo.js";
 import { UserDocument } from "../repositories/userRepo.js";
 import { ApiError } from "../utils/apiError.js";
 import {
+  CreateAgentInput,
   LoginInput,
   RegisterInput,
   VerifyOtpInput,
@@ -41,6 +42,26 @@ export const createUser = async (
     name: userData.name,
     email: userData.email,
     password: hashedPassword,
+  });
+
+  return formatUserResponse(user);
+};
+
+export const createAgent = async (
+  agentData: CreateAgentInput,
+): Promise<SafeUser> => {
+  const existingUser = await userRepo.findByEmail(agentData.email);
+  if (existingUser) {
+    throw new ApiError(409, "User with this email already exists");
+  }
+
+  const hashedPassword = await bcrypt.hash(agentData.password, 10);
+
+  const user = await userRepo.createUser({
+    name: agentData.name,
+    email: agentData.email,
+    password: hashedPassword,
+    role: "agent",
   });
 
   return formatUserResponse(user);

@@ -255,3 +255,19 @@ export const closeTicket = async (
     status: "CLOSED",
   });
 };
+
+// Admin
+export const getAllTickets = async (page: number = 1, limit: number = 20) => {
+  const offset = (page - 1) * limit;
+  return ticketRepo.findAllTickets(limit, offset);
+};
+
+export const getAdminStats = async () => {
+  const ticketStats = await ticketRepo.getTicketStats();
+  const activeAgents = await ticketRepo.getActiveAgentCount();
+
+  return {
+    ...ticketStats,
+    activeAgents,
+  };
+};

@@ -41,6 +41,25 @@ export const verifyOtpSchema = z.object({
     .regex(/^\d+$/, "OTP must contain only numbers"),
 });
 
+export const createAgentSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(255, "Name must be under 255 characters")
+    .trim(),
+  email: z
+    .string()
+    .email("Invalid email format")
+    .max(255, "Email must be under 255 characters")
+    .trim(),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .max(128, "Password must be under 128 characters")
+    .trim(),
+});
+
+export type CreateAgentInput = z.infer<typeof createAgentSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
