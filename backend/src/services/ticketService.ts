@@ -10,6 +10,7 @@ import {
 } from "../validators/ticketValidator.js";
 
 import * as ticketHistoryService from "../services/ticketHistoryService.js";
+import * as redisPresenceService from "./redisPresenceService.js";
 
 export const createTicket = async (
   customerId: string,
@@ -149,14 +150,6 @@ export const updateTicketStatus = async (
     throw new ApiError(400, "Status is required");
   }
 
-  await ticketHistoryService.recordHistory({
-    ticketId,
-    changedBy: userId,
-    action: "STATUS_CHANGED",
-    oldStatus: ticket.status,
-    newStatus: newStatus,
-  });
-
   if (userRole !== "admin") {
     if (ticket.status === "WAITING") {
       // If it's waiting, only the customer who created it should be able to cancel it
@@ -197,6 +190,14 @@ export const updateTicketStatus = async (
   if (!updated) {
     throw new ApiError(500, "Failed to update ticket");
   }
+
+  await ticketHistoryService.recordHistory({
+    ticketId,
+    changedBy: userId,
+    action: "STATUS_CHANGED",
+    oldStatus: ticket.status,
+    newStatus: newStatus,
+  });
 
   socketEmitter.emitToTicketRoom(updated.id, "ticket_status_updated", updated);
   socketEmitter.emitToAgentDashboard("ticket_status_updated", updated);
@@ -264,10 +265,12 @@ export const getAllTickets = async (page: number = 1, limit: number = 20) => {
 
 export const getAdminStats = async () => {
   const ticketStats = await ticketRepo.getTicketStats();
-  const activeAgents = await ticketRepo.getActiveAgentCount();
+  const totalAgents = await ticketRepo.getAgentCount();
+  const onlineAgents = await redisPresenceService.getOnlineAgentCount();
 
   return {
     ...ticketStats,
-    activeAgents,
+    totalAgents,
+    onlineAgents,
   };
 };

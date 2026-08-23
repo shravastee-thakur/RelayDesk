@@ -3,6 +3,7 @@ import {
   CreateHistoryData,
   HistoryDocument,
 } from "../repositories/ticketHistoryRepo.js";
+import { ApiError } from "../utils/apiError.js";
 import logger from "../utils/logger.js";
 import { verifyTicketAccess } from "../utils/ticketAccess.js";
 
@@ -11,6 +12,7 @@ export const recordHistory = async (data: CreateHistoryData) => {
     await ticketHistoryRepo.createHistory(data);
   } catch (error) {
     logger.error(`History recording failed: ${(error as Error).message}`);
+    throw new ApiError(401, "History recording failed");
   }
 };
 

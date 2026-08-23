@@ -41,3 +41,20 @@ export const getStats = async (
     next(error);
   }
 };
+
+export const getAgents = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const agents = await userService.getAllAgents();
+
+    return res.status(200).json({
+      success: true,
+      data: agents,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

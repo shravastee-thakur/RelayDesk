@@ -204,7 +204,7 @@ export const getTicketStats = async () => {
   };
 };
 
-export const getActiveAgentCount = async () => {
+export const getAgentCount = async () => {
   const agents = await db
     .select({ count: count() })
     .from(users)
@@ -212,3 +212,5 @@ export const getActiveAgentCount = async () => {
 
   return agents[0].count;
 };
+
+

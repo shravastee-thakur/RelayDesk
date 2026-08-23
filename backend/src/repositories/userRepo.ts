@@ -18,9 +18,7 @@ export const findByEmail = async (
   return user;
 };
 
-export const findById = async (
-  id: string,
-): Promise<UserDocument | null> => {
+export const findById = async (id: string): Promise<UserDocument | null> => {
   const [user] = await db.select().from(users).where(eq(users.id, id));
   return user;
 };
@@ -49,4 +47,18 @@ export const updateUser = async (
     .returning();
 
   return user;
+};
+
+export const findAllAgents = async () => {
+  const agents = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(eq(users.role, "agent"));
+
+  return agents;
 };

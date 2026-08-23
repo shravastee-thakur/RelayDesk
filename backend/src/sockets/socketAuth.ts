@@ -28,12 +28,3 @@ export const socketAuth = (socket: Socket, next: (err?: Error) => void) => {
     next(new Error("Invalid authentication token"));
   }
 };
-
-
-// 1. Socket connection ✅
-// 2. Authentication ✅
-// 3. Join ticket room ✅
-// 4. Verify ticket access
-// 5. Send message event
-// 6. Save message in DB
-// 7. Broadcast message

@@ -4,6 +4,11 @@ import { env } from "../config/env.js";
 import { socketAuth } from "./socketAuth.js";
 import logger from "../utils/logger.js";
 import { registerTicketSocketEvents } from "./ticketSocket.js";
+import {
+  markAgentOffline,
+  markAgentOnline,
+  refreshAgentPresence,
+} from "../services/redisPresenceService.js";
 
 // We export the io instance so our future socketEmitter can use it
 export let io: SocketIOServer;
@@ -31,10 +36,30 @@ export const initializeSocket = (server: http.Server) => {
       `[Socket.IO] New connection: ${socket.id} for User: ${user.id}`,
     );
 
+    // Track agent presence in Redis
+    let presenceInterval: NodeJS.Timeout | null = null;
+
+    if (user.role === "agent") {
+      markAgentOnline(user.id);
+
+      // Refresh presence every 40 seconds
+      presenceInterval = setInterval(() => {
+        refreshAgentPresence(user.id);
+      }, 40000);
+    }
+
     registerTicketSocketEvents(socket);
 
     socket.on("disconnect", () => {
       console.log(`[Socket.IO] Disconnected: ${socket.id}`);
+
+      if (presenceInterval) {
+        clearInterval(presenceInterval);
+      }
+
+      if (user.role === "agent") {
+        markAgentOffline(user.id);
+      }
     });
   });
 };

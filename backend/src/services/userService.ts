@@ -209,3 +209,7 @@ export const logout = async (userId: string) => {
 
   await userRepo.updateUser(userId, { refreshToken: "" });
 };
+
+export const getAllAgents = async () => {
+  return userRepo.findAllAgents();
+};

@@ -13,6 +13,13 @@ router.post(
 );
 
 router.get(
+  "/agents",
+  authenticate,
+  authorize("admin"),
+  adminController.getAgents,
+);
+
+router.get(
   "/stats",
   authenticate,
   authorize("admin"),
