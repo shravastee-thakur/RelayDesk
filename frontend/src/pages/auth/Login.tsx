@@ -1,80 +1,109 @@
-// pages/LoginPage.tsx
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Ticket, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
-import { api } from "../lib/api";
-import { useAuthStore } from "../stores/authStore";
+import api from "../../utils/api";
+import { useAuthStore } from "../../store/authStore";
 
 type LoginStep = "credentials" | "otp";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setAuth, isAuthenticated, getDashboardPath } = useAuthStore();
 
-  // Redirect if already logged in
+  // Atomic selectors — prevents re-render when unrelated store fields change
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  // Redirect authenticated users immediately
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(getDashboardPath(), { replace: true });
+      const path = useAuthStore.getState().getDashboardPath();
+      navigate(path, { replace: true });
     }
-  }, [isAuthenticated, navigate, getDashboardPath]);
+  }, [isAuthenticated, navigate]);
 
   const [step, setStep] = useState<LoginStep>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
+  const [timeLeft, setTimeLeft] = useState(300);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const otpInputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Auto-focus OTP input when step changes
+  // Cleanup timer on unmount
   useEffect(() => {
-    if (step === "otp") {
-      setTimeout(() => otpInputRef.current?.focus(), 100);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // Manage countdown timer
+  useEffect(() => {
+    if (step !== "otp") {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
     }
-  }, [step]);
 
-  // Countdown timer
-  useEffect(() => {
-    if (step !== "otp" || timeLeft <= 0) return;
-
-    const timer = setInterval(() => {
+    setTimeLeft(300);
+    timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) clearInterval(timer);
-        return prev - 1;
+        if (prev <= 1 && timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        return Math.max(0, prev - 1);
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [step, timeLeft]);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [step]);
 
-  const formatTime = (seconds: number) => {
+  // Auto-focus OTP input
+  useEffect(() => {
+    if (step === "otp") {
+      const t = setTimeout(() => otpInputRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  const formatTime = useCallback((seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
+  }, []);
 
-  const handleCredentialsSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+  const handleCredentialsSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (loading) return;
+      setError(null);
+      setLoading(true);
 
-    try {
-      // Step 1: Verify credentials — backend sends OTP
-      await api.post("/auth/login", { email, password });
-      setStep("otp");
-      setTimeLeft(300);
-      setOtp("");
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Invalid credentials. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        await api.post("api/users/otp-requests", { email, password });
+        setStep("otp");
+        setOtp("");
+      } catch (err: any) {
+        setError(
+          err.response?.data?.message ||
+            "Invalid credentials. Please try again.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [email, password, loading],
+  );
 
   const verifyOtp = useCallback(
     async (code: string) => {
@@ -83,17 +112,14 @@ export default function LoginPage() {
       setError(null);
 
       try {
-        // Step 2: Verify OTP — backend returns tokens + user
-        const { data } = await api.post("/auth/verify-otp", {
+        const { data } = await api.post("api/users/sessions", {
           email,
           otp: code,
         });
+        useAuthStore.getState().setAuth(data.user, data.accessToken);
 
-        setAuth(data.user, data.accessToken, data.refreshToken);
-
-        // Role-based redirect
-        const dashboard = useAuthStore.getState().getDashboardPath();
-        navigate(dashboard, { replace: true });
+        const path = useAuthStore.getState().getDashboardPath();
+        navigate(path, { replace: true });
       } catch (err: any) {
         setError(
           err.response?.data?.message || "Invalid code. Please try again.",
@@ -102,24 +128,26 @@ export default function LoginPage() {
         setLoading(false);
       }
     },
-    [email, navigate, setAuth],
+    [email, navigate],
   );
 
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-    setOtp(value);
-    setError(null);
+  const handleOtpChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+      setOtp(value);
+      setError(null);
+      if (value.length === 6) verifyOtp(value);
+    },
+    [verifyOtp],
+  );
 
-    if (value.length === 6) {
-      verifyOtp(value);
-    }
-  };
-
-  const handleResend = async () => {
+  const handleResend = useCallback(async () => {
+    if (loading) return;
     setError(null);
     setLoading(true);
+
     try {
-      await api.post("/auth/login", { email, password });
+      await api.post("/users/otp-requests", { email, password });
       setTimeLeft(300);
       setOtp("");
     } catch (err: any) {
@@ -127,7 +155,7 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, password, loading]);
 
   const sessionExpired = searchParams.get("session") === "expired";
 
@@ -146,7 +174,6 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Card */}
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           {sessionExpired && (
             <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
@@ -227,15 +254,6 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
-
-              <div className="mt-6 text-center">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  Forgot password?
-                </Link>
-              </div>
             </>
           ) : (
             <>
@@ -262,7 +280,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-5">
-                {/* Single OTP Input */}
+                {/* Single OTP input field */}
                 <div className="flex flex-col items-center">
                   <input
                     ref={otpInputRef}
@@ -322,7 +340,6 @@ export default function LoginPage() {
           )}
         </div>
 
-        {/* Footer */}
         <p className="mt-6 text-center text-sm text-slate-500">
           Don't have an account?{" "}
           <Link

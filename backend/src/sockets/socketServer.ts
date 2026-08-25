@@ -2,7 +2,6 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import http from "http";
 import { env } from "../config/env.js";
 import { socketAuth } from "./socketAuth.js";
-import logger from "../utils/logger.js";
 import { registerTicketSocketEvents } from "./ticketSocket.js";
 import {
   markAgentOffline,
@@ -16,7 +15,7 @@ export let io: SocketIOServer;
 export const initializeSocket = (server: http.Server) => {
   io = new SocketIOServer(server, {
     cors: {
-      origin: "*",
+      origin: env.FRONTEND_URL,
       methods: ["GET", "POST"],
       credentials: true,
     },

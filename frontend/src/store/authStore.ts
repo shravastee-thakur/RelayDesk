@@ -1,62 +1,66 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-export interface UserInfo {
+export type UserRole = "customer" | "agent" | "admin";
+
+export interface User {
   id: string;
+  name: string;
   email: string;
-  username: string;
   role: string;
   isVerified: boolean;
 }
 
-export interface AuthState {
-  userId: string | null;
-  userInfo: UserInfo | null;
+interface AuthState {
+  user: User | null;
   accessToken: string | null;
-  isVerified: boolean;
-  role: string | null;
+  isAuthenticated: boolean;
 
-  setUserId: (id: string | null) => void;
-  setUserInfo: (info: UserInfo | null) => void;
+  setAuth: (user: User, accessToken: string) => void;
   setAccessToken: (token: string | null) => void;
-  setIsVerified: (status: boolean) => void;
-  setRole: (role: string) => void;
-  clearAuth: () => void;
+  logout: () => void;
+  getDashboardPath: () => string;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
-      userId: null,
-      userInfo: null,
+    (set, get) => ({
+      user: null,
       accessToken: null,
-      isVerified: false,
-      role: null,
-      selectedTheaterId: null,
-      activeLocation: "Mumbai",
+      isAuthenticated: false,
 
-      setUserId: (id) => set({ userId: id }),
-      setUserInfo: (info) => set({ userInfo: info }),
+      setAuth: (user, accessToken) =>
+        set({ user, accessToken, isAuthenticated: true }),
       setAccessToken: (token) => set({ accessToken: token }),
-      setIsVerified: (status) => set({ isVerified: status }),
-      setRole: (role) => set({ role: role }),
 
-      clearAuth: () =>
+      logout: () =>
         set({
-          userId: null,
+          user: null,
           accessToken: null,
-          isVerified: false,
+          isAuthenticated: false,
         }),
+
+      getDashboardPath: () => {
+        const role = get().user?.role;
+        switch (role) {
+          case "admin":
+            return "/admin/dashboard";
+          case "agent":
+            return "/agent/dashboard";
+          case "customer":
+          default:
+            return "/customer/dashboard";
+        }
+      },
     }),
     {
-      name: "auth-storage",
+      name: "relaydesk-auth",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        userId: state.userId,
-        userInfo: state.userInfo,
-        isVerified: state.isVerified,
-        role: state.role,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
       }),
     },
   ),
 );
+
