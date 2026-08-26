@@ -1,45 +1,52 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Ticket, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  Ticket,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import api from "../../utils/api";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (loading) return;
-      setError(null);
-      setLoading(true);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
-      try {
-        const res = await api.post("api/users/", { name, email, password });
-        console.log(res.data);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-        setSuccess(true);
-        setTimeout(() => navigate("/login?registered=true"), 1500);
-      } catch (err: any) {
-        setError(
-          err.response?.data?.message ||
-            "Registration failed. Please try again.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [name, email, password, loading, navigate],
-  );
+    try {
+      const res = await api.post("api/users/", form);
+      console.log(res.data);
+
+      setSuccess(true);
+      setTimeout(() => navigate("/login?registered=true"), 1500);
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message || "Registration failed. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12">
       <div className="w-full max-w-md">
+        {/* Logo */}
         <div className="mb-8 flex justify-center">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
@@ -76,6 +83,7 @@ export default function RegisterPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Name */}
                 <div>
                   <label
                     htmlFor="name"
@@ -85,9 +93,10 @@ export default function RegisterPage() {
                   </label>
                   <input
                     id="name"
+                    name="name"
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={form.name}
+                    onChange={handleChange}
                     required
                     autoComplete="name"
                     className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -95,6 +104,7 @@ export default function RegisterPage() {
                   />
                 </div>
 
+                {/* Email */}
                 <div>
                   <label
                     htmlFor="email"
@@ -104,9 +114,10 @@ export default function RegisterPage() {
                   </label>
                   <input
                     id="email"
+                    name="email"
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={form.email}
+                    onChange={handleChange}
                     required
                     autoComplete="email"
                     className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -114,6 +125,7 @@ export default function RegisterPage() {
                   />
                 </div>
 
+                {/* Password with visibility toggle */}
                 <div>
                   <label
                     htmlFor="password"
@@ -121,19 +133,31 @@ export default function RegisterPage() {
                   >
                     Password
                   </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="new-password"
-                    minLength={6}
-                    className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="Minimum 6 characters"
-                  />
+                  <div className="relative">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={handleChange}
+                      required
+                      autoComplete="new-password"
+                      minLength={6}
+                      className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 pr-10 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      placeholder="Minimum 6 characters"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
+                {/* Error */}
                 {error && (
                   <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                     <AlertCircle size={16} />
@@ -141,6 +165,7 @@ export default function RegisterPage() {
                   </div>
                 )}
 
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={loading}

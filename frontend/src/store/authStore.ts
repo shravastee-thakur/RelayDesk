@@ -7,7 +7,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: UserRole;
   isVerified: boolean;
 }
 
@@ -63,4 +63,3 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
-

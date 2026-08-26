@@ -1,163 +1,123 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Ticket, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
+import { Ticket, Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
 import api from "../../utils/api";
 import { useAuthStore } from "../../store/authStore";
 
-type LoginStep = "credentials" | "otp";
+type Step = "credentials" | "otp";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
-  // Atomic selectors — prevents re-render when unrelated store fields change
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  // Redirect authenticated users immediately
+  // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      const path = useAuthStore.getState().getDashboardPath();
-      navigate(path, { replace: true });
+      navigate(useAuthStore.getState().getDashboardPath(), { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  const [step, setStep] = useState<LoginStep>("credentials");
+  const [step, setStep] = useState<Step>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [timeLeft, setTimeLeft] = useState(300);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const otpInputRef = useRef<HTMLInputElement>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Cleanup timer on unmount
+  // Countdown timer
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
-
-  // Manage countdown timer
-  useEffect(() => {
-    if (step !== "otp") {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      return;
-    }
-
+    if (step !== "otp") return;
     setTimeLeft(300);
-    timerRef.current = setInterval(() => {
+    const timer = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1 && timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
+        if (prev <= 1) clearInterval(timer);
         return Math.max(0, prev - 1);
       });
     }, 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
+    return () => clearInterval(timer);
   }, [step]);
 
   // Auto-focus OTP input
   useEffect(() => {
     if (step === "otp") {
-      const t = setTimeout(() => otpInputRef.current?.focus(), 50);
+      const t = setTimeout(() => document.getElementById("otp")?.focus(), 50);
       return () => clearTimeout(t);
     }
   }, [step]);
 
-  const formatTime = useCallback((seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  }, []);
+  // Session expired notification
+  useEffect(() => {
+    if (searchParams.get("session") === "expired") {
+      toast.error("Your session expired. Please sign in again.");
+    }
+  }, [searchParams]);
 
-  const handleCredentialsSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (loading) return;
-      setError(null);
-      setLoading(true);
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
-      try {
-        await api.post("api/users/otp-requests", { email, password });
-        setStep("otp");
-        setOtp("");
-      } catch (err: any) {
-        setError(
-          err.response?.data?.message ||
-            "Invalid credentials. Please try again.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [email, password, loading],
-  );
-
-  const verifyOtp = useCallback(
-    async (code: string) => {
-      if (code.length !== 6) return;
-      setLoading(true);
-      setError(null);
-
-      try {
-        const { data } = await api.post("api/users/sessions", {
-          email,
-          otp: code,
-        });
-        useAuthStore.getState().setAuth(data.user, data.accessToken);
-
-        const path = useAuthStore.getState().getDashboardPath();
-        navigate(path, { replace: true });
-      } catch (err: any) {
-        setError(
-          err.response?.data?.message || "Invalid code. Please try again.",
-        );
-        setOtp("");
-        setLoading(false);
-      }
-    },
-    [email, navigate],
-  );
-
-  const handleOtpChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-      setOtp(value);
-      setError(null);
-      if (value.length === 6) verifyOtp(value);
-    },
-    [verifyOtp],
-  );
-
-  const handleResend = useCallback(async () => {
-    if (loading) return;
-    setError(null);
+  const handleCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
 
     try {
-      await api.post("/users/otp-requests", { email, password });
-      setTimeLeft(300);
+      const res = await api.post("api/users/otp-requests", { email, password });
+      console.log(res.data);
+
+      toast.success("OTP sent to your email");
+      setStep("otp");
       setOtp("");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to resend code.");
+      toast.error(err.response?.data?.message || "Invalid credentials");
     } finally {
       setLoading(false);
     }
-  }, [email, password, loading]);
+  };
 
-  const sessionExpired = searchParams.get("session") === "expired";
+  const verifyOtp = async (code: string) => {
+    if (code.length !== 6) return;
+    setLoading(true);
+
+    try {
+      const { data } = await api.post("api/users/sessions", {
+        email,
+        otp: code,
+      });
+      console.log(data);
+
+      useAuthStore.getState().setAuth(data.user, data.accessToken);
+      toast.success(`Welcome back, ${data.user.name}!`);
+      navigate(useAuthStore.getState().getDashboardPath(), { replace: true });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Invalid code");
+      setOtp("");
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setOtp(value);
+    if (value.length === 6) verifyOtp(value);
+  };
+
+  const handleResend = async () => {
+    setLoading(true);
+    try {
+      await api.post("api/users/otp-requests", { email, password });
+      toast.success("New OTP sent");
+      setTimeLeft(300);
+      setOtp("");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to resend");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12">
@@ -175,13 +135,6 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          {sessionExpired && (
-            <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
-              <AlertCircle size={16} />
-              Your session expired. Please sign in again.
-            </div>
-          )}
-
           {step === "credentials" ? (
             <>
               <div className="mb-6 text-center">
@@ -193,7 +146,7 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+              <form onSubmit={handleCredentials} className="space-y-4">
                 <div>
                   <label
                     htmlFor="email"
@@ -220,24 +173,27 @@ export default function LoginPage() {
                   >
                     Password
                   </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                {error && (
-                  <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                    <AlertCircle size={16} />
-                    {error}
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 pr-10 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
-                )}
+                </div>
 
                 <button
                   type="submit"
@@ -260,7 +216,6 @@ export default function LoginPage() {
               <button
                 onClick={() => {
                   setStep("credentials");
-                  setError(null);
                   setOtp("");
                 }}
                 className="mb-4 flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700"
@@ -280,10 +235,9 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-5">
-                {/* Single OTP input field */}
                 <div className="flex flex-col items-center">
                   <input
-                    ref={otpInputRef}
+                    id="otp"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -302,13 +256,6 @@ export default function LoginPage() {
                     />
                   </div>
                 </div>
-
-                {error && (
-                  <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                    <AlertCircle size={16} />
-                    {error}
-                  </div>
-                )}
 
                 {loading && (
                   <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
