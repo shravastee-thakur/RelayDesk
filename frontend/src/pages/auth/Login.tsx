@@ -67,10 +67,13 @@ export default function LoginPage() {
     try {
       const res = await api.post("api/users/otp-requests", { email, password });
       console.log(res.data);
-
-      toast.success("OTP sent to your email");
-      setStep("otp");
-      setOtp("");
+      if (res.data.success) {
+        toast.success(res.data.message, {
+          style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
+        });
+        setStep("otp");
+        setOtp("");
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Invalid credentials");
     } finally {

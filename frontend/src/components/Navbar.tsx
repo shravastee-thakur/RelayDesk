@@ -30,20 +30,40 @@ interface NavItem {
 const NAV_CONFIG: Record<UserRole, NavItem[]> = {
   public: [
     { label: "Features", href: "/features", icon: <Zap size={18} /> },
-    { label: "How it Works", href: "/how-it-works", icon: <HelpCircle size={18} /> },
+    {
+      label: "How it Works",
+      href: "/how-it-works",
+      icon: <HelpCircle size={18} />,
+    },
   ],
   customer: [
-    { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} /> },
+    {
+      label: "Dashboard",
+      href: "/customer/dashboard",
+      icon: <LayoutDashboard size={18} />,
+    },
     { label: "My Tickets", href: "/my-tickets", icon: <Ticket size={18} /> },
-    { label: "Create Ticket", href: "/create-ticket", icon: <PlusCircle size={18} /> },
+    {
+      label: "Create Ticket",
+      href: "/create-ticket",
+      icon: <PlusCircle size={18} />,
+    },
   ],
   agent: [
-    { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} /> },
+    {
+      label: "Dashboard",
+      href: "/agent/dashboard",
+      icon: <LayoutDashboard size={18} />,
+    },
     { label: "Queue", href: "/queue", icon: <Inbox size={18} /> },
     { label: "My Tickets", href: "/my-tickets", icon: <Ticket size={18} /> },
   ],
   admin: [
-    { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} /> },
+    {
+      label: "Dashboard",
+      href: "/admin/dashboard",
+      icon: <LayoutDashboard size={18} />,
+    },
     { label: "Tickets", href: "/tickets", icon: <Layers size={18} /> },
     { label: "Agents", href: "/agents", icon: <Users size={18} /> },
     { label: "Analytics", href: "/analytics", icon: <BarChart3 size={18} /> },
@@ -74,7 +94,10 @@ export default function Navbar() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
+      ) {
         setProfileOpen(false);
       }
     }
@@ -91,12 +114,16 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await api.delete("/api/users/sessions");
+      const res = await api.delete("/api/users/sessions");
+      if (res.data.success) {
+        toast.success(res.data.message, {
+          style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
+        });
+      }
     } catch (error) {
       console.error("Backend logout failed:", error);
     } finally {
       logout();
-      toast.success("Logged out successfully");
       navigate("/", { replace: true });
     }
   };
@@ -105,7 +132,6 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-sm">
       {/* Added `relative` so the absolute mobile menu anchors correctly */}
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        
         {/* ─── Brand ─── */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
@@ -164,8 +190,12 @@ export default function Navbar() {
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-lg border border-slate-200 bg-white py-1.5 shadow-lg ring-1 ring-black/5">
                   <div className="border-b border-slate-100 px-4 py-3 sm:hidden">
-                    <p className="text-sm font-semibold text-slate-900">{user.name}</p>
-                    <p className="text-xs text-slate-500 capitalize">{user.role}</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-slate-500 capitalize">
+                      {user.role}
+                    </p>
                   </div>
                   <Link
                     to="/profile"

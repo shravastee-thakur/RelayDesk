@@ -212,5 +212,3 @@ export const getAgentCount = async () => {
 
   return agents[0].count;
 };
-
-

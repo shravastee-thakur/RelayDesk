@@ -1,25 +1,41 @@
 export type TicketStatus =
-  | "open"
-  | "assigned"
-  | "in_progress"
-  | "resolved"
-  | "closed"
-  | "waiting";
+  | "WAITING"
+  | "ASSIGNED"
+  | "IN_PROGRESS"
+  | "RESOLVED"
+  | "CLOSED"
+  | "CANCELLED";
 
-export type TicketPriority = "urgent" | "high" | "medium" | "low";
-
-export interface TicketUser {
-  id: string;
-  name: string;
-}
+export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
 export interface Ticket {
   id: string;
+  customerId: string;
+  agentId: string | null;
   title: string;
+  description: string;
   status: TicketStatus;
   priority: TicketPriority;
-  customer: TicketUser;
-  agent?: TicketUser;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
+  assignedAt: string | null;
+  startedAt: string | null;
+  resolvedAt: string | null;
+}
+
+export interface TicketHistoryItem {
+  id: string;
+  ticketId: string;
+  changedBy: string;
+  action:
+    | "CREATED"
+    | "ASSIGNED"
+    | "STATUS_CHANGED"
+    | "PRIORITY_CHANGED"
+    | "MESSAGE";
+  oldStatus?: TicketStatus;
+  newStatus?: TicketStatus;
+  oldPriority?: TicketPriority;
+  newPriority?: TicketPriority;
+  createdAt: string;
 }
