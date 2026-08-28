@@ -20,6 +20,7 @@ import RegisterPage from "./pages/auth/Register";
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import CustomerTicketsPage from "./pages/customer/CustomerTicketsPage";
 
 const App = () => {
   return (
@@ -41,6 +42,7 @@ const App = () => {
         <Route element={<AppLayout />}>
           <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+            <Route path="/customer/tickets" element={<CustomerTicketsPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={["agent"]} />}>

@@ -29,6 +29,7 @@ export default React.memo(function CreateTicketModal({
         });
         onCreated();
         onClose();
+        setLoading(false);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to create request");

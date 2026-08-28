@@ -42,11 +42,10 @@ const NAV_CONFIG: Record<UserRole, NavItem[]> = {
       href: "/customer/dashboard",
       icon: <LayoutDashboard size={18} />,
     },
-    { label: "My Tickets", href: "/my-tickets", icon: <Ticket size={18} /> },
     {
-      label: "Create Ticket",
-      href: "/create-ticket",
-      icon: <PlusCircle size={18} />,
+      label: "My Tickets",
+      href: "/customer/tickets",
+      icon: <Ticket size={18} />,
     },
   ],
   agent: [

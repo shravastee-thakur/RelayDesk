@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { useCustomerTicketStore } from "../../store/customerTicketStore";
 import Card from "../../components/ui/Card";
@@ -15,6 +16,7 @@ import {
   Inbox,
   PlusCircle,
   AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 
 function SummaryCard({
@@ -69,14 +71,15 @@ export default function CustomerDashboardPage() {
     return { total, waiting, active, resolved };
   }, [tickets]);
 
-  const sortedTickets = useMemo(() => {
+  const recentTickets = useMemo(() => {
     const activeFirst = ["WAITING", "ASSIGNED", "IN_PROGRESS"];
-    return [...tickets].sort((a, b) => {
+    const sorted = [...tickets].sort((a, b) => {
       const aActive = activeFirst.includes(a.status) ? 0 : 1;
       const bActive = activeFirst.includes(b.status) ? 0 : 1;
       if (aActive !== bActive) return aActive - bActive;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
+    return sorted.slice(0, 3);
   }, [tickets]);
 
   if (loading && tickets.length === 0) {
@@ -140,9 +143,11 @@ export default function CustomerDashboardPage() {
         />
       </div>
 
-      {/* Tickets */}
+      {/* Recent Tickets */}
       <div>
-        <h2 className="mb-4 text-lg font-bold text-slate-900">Your Requests</h2>
+        <h2 className="mb-4 text-lg font-bold text-slate-900">
+          Recent Requests
+        </h2>
 
         {tickets.length === 0 ? (
           <Card>
@@ -161,15 +166,28 @@ export default function CustomerDashboardPage() {
             />
           </Card>
         ) : (
-          <div className="space-y-3">
-            {sortedTickets.map((ticket) => (
-              <TicketCard
-                key={ticket.id}
-                ticket={ticket}
-                onClick={() => setDetailId(ticket.id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {recentTickets.map((ticket) => (
+                <TicketCard
+                  key={ticket.id}
+                  ticket={ticket}
+                  onClick={() => setDetailId(ticket.id)}
+                />
+              ))}
+            </div>
+
+            {tickets.length > 3 && (
+              <div className="mt-5 text-center">
+                <Link
+                  to="/customer/tickets"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  View all tickets <ArrowRight size={16} />
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </div>
 

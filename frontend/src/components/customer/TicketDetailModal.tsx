@@ -3,7 +3,6 @@ import { X, Loader2, Clock, XCircle } from "lucide-react";
 import { useCustomerTicketStore } from "../../store/customerTicketStore";
 import StatusBadge from "../ui/StatusBadge";
 import PriorityBadge from "../ui/PriorityBadge";
-import toast from "react-hot-toast";
 
 interface TicketDetailModalProps {
   ticketId: string;
@@ -28,6 +27,7 @@ export default React.memo(function TicketDetailModal({
   const fetchDetails = useCustomerTicketStore((s) => s.fetchTicketDetails);
   const fetchHistory = useCustomerTicketStore((s) => s.fetchHistory);
   const cancelTicket = useCustomerTicketStore((s) => s.cancelTicket);
+  const clearSelected = useCustomerTicketStore((s) => s.clearSelected);
 
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -37,13 +37,18 @@ export default React.memo(function TicketDetailModal({
     fetchHistory(ticketId);
   }, [ticketId, fetchDetails, fetchHistory]);
 
+  useEffect(() => {
+    return () => {
+      clearSelected();
+    };
+  }, [clearSelected]);
+
   const handleCancel = async () => {
     setCancelling(true);
     await cancelTicket(ticketId);
     setCancelling(false);
 
     if (!useCustomerTicketStore.getState().error) {
-      toast.success("Request cancelled");
       onClose();
     } else {
       setConfirmCancel(false);

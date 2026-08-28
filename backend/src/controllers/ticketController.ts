@@ -191,7 +191,7 @@ export const cancelTicket = async (
   next: NextFunction,
 ) => {
   try {
-    const ticketId = req.params.ticketId as string;
+    const ticketId = req.params.id as string;
     const userId = req.user?.id as string;
     const userRole = req.user?.role as string;
 
@@ -326,4 +326,3 @@ export const getAllTickets = async (
     next(error);
   }
 };
-
