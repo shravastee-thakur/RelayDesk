@@ -32,8 +32,19 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
 
         set({ tickets: res.data.data, loading: false });
       } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.message || "Failed to load your requests";
+
+        toast.error(errorMessage, {
+          style: {
+            borderRadius: "10px",
+            background: "#25671E",
+            color: "#fff",
+          },
+        });
+
         set({
-          error: err.response?.data?.message || "Failed to load your requests",
+          error: errorMessage,
           loading: false,
         });
       }
@@ -45,8 +56,19 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
         const res = await api.get(`api/tickets/${id}`);
         set({ selectedTicket: res.data.data, loading: false });
       } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.message || "Failed to load ticket details";
+
+        toast.error(errorMessage, {
+          style: {
+            borderRadius: "10px",
+            background: "#25671E",
+            color: "#fff",
+          },
+        });
+
         set({
-          error: err.response?.data?.message || "Failed to load ticket details",
+          error: errorMessage,
           loading: false,
         });
       }
@@ -57,7 +79,21 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
         const res = await api.get(`api/tickets/${id}/history`);
         set({ history: res.data.data });
       } catch (err: any) {
-        set({ error: err.response?.data?.message || "Failed to load history" });
+        const errorMessage =
+          err.response?.data?.message || "Failed to load history";
+
+        toast.error(errorMessage, {
+          style: {
+            borderRadius: "10px",
+            background: "#25671E",
+            color: "#fff",
+          },
+        });
+
+        set({
+          error: errorMessage,
+          loading: false,
+        });
       }
     },
 
@@ -83,12 +119,17 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
         const errorMessage =
           err.response?.data?.message || "Failed to cancel ticket";
 
-        // Show error toast so user knows what went wrong
-        toast.error(errorMessage);
+        toast.error(errorMessage, {
+          style: {
+            borderRadius: "10px",
+            background: "#25671E",
+            color: "#fff",
+          },
+        });
 
         set({
           error: errorMessage,
-          loading: false, // Add this
+          loading: false,
         });
       }
     },

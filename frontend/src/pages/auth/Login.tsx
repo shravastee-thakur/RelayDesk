@@ -71,11 +71,19 @@ export default function LoginPage() {
         toast.success(res.data.message, {
           style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
         });
+
         setStep("otp");
         setOtp("");
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Invalid credentials");
+      const errorMessage = err.response?.data?.message || "Invalid credentials";
+      toast.error(errorMessage, {
+        style: {
+          borderRadius: "10px",
+          background: "#25671E",
+          color: "#fff",
+        },
+      });
     } finally {
       setLoading(false);
     }
@@ -93,10 +101,24 @@ export default function LoginPage() {
       console.log(data);
 
       useAuthStore.getState().setAuth(data.user, data.accessToken);
-      toast.success(`Welcome back, ${data.user.name}!`);
+      toast.success(`Welcome back, ${data.user.name}!`, {
+        style: {
+          borderRadius: "10px",
+          background: "#25671E",
+          color: "#fff",
+        },
+      });
       navigate(useAuthStore.getState().getDashboardPath(), { replace: true });
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Invalid code");
+      const errorMessage = err.response?.data?.message || "Invalid code";
+      toast.error(errorMessage, {
+        style: {
+          borderRadius: "10px",
+          background: "#25671E",
+          color: "#fff",
+        },
+      });
+
       setOtp("");
       setLoading(false);
     }
@@ -116,7 +138,14 @@ export default function LoginPage() {
       setTimeLeft(300);
       setOtp("");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to resend");
+      const errorMessage = err.response?.data?.message || "Failed to resend";
+      toast.error(errorMessage, {
+        style: {
+          borderRadius: "10px",
+          background: "#25671E",
+          color: "#fff",
+        },
+      });
     } finally {
       setLoading(false);
     }
