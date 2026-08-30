@@ -32,7 +32,16 @@ export default React.memo(function CreateTicketModal({
         setLoading(false);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to create request");
+      const errorMessage =
+        err.response?.data?.message || "Failed to create request";
+
+      toast.error(errorMessage, {
+        style: {
+          borderRadius: "10px",
+          background: "#25671E",
+          color: "#fff",
+        },
+      });
       setLoading(false);
     }
   };

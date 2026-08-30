@@ -6,12 +6,36 @@ const api = axios.create({
   withCredentials: true,
 });
 
+const REFRESH_URL = `${import.meta.env.VITE_BACKEND_URL}/api/users/tokens`;
+
 const PUBLIC_ENDPOINTS = [
   "/users/", // register
   "/users/otp-requests", // send OTP
   "/users/sessions", // verify OTP + login
+  "/api/users/tokens",
 ];
 
+let refreshPromise: Promise<string> | null = null;
+
+const refreshAccessToken = async (): Promise<string> => {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(REFRESH_URL, {}, { withCredentials: true })
+      .then((res) => {
+        const newToken = res.data.accessToken;
+
+        // Just update the token
+        useAuthStore.getState().setAccessToken(newToken);
+        return newToken;
+      })
+      .catch((err) => {
+        refreshPromise = null;
+        throw err;
+      });
+  }
+
+  return refreshPromise;
+};
 // Attach token to every request
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
@@ -28,6 +52,10 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const url = originalRequest?.url || "";
 
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
     // Never refresh for auth endpoints - they handle their own errors
     if (PUBLIC_ENDPOINTS.some((endpoint) => url.includes(endpoint))) {
       return Promise.reject(error);
@@ -38,18 +66,10 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Use raw axios - bypasses interceptors, no infinite loop
-        const res = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/users/tokens`,
-          {},
-          { withCredentials: true },
-        );
+        const newToken = await refreshAccessToken();
 
-        // Just update the token
-        useAuthStore.getState().setAccessToken(res.data.accessToken);
         // Retry original request with new token
-        originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
-
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch {
         // Refresh failed — kick to login
@@ -89,8 +109,3 @@ Response received
          └─ Already retried? → Just fail (avoid infinite loop)
 
 */
-// Store loads user and isAuthenticated: true from localStorage
-// First API call gets 401 (no token in memory)
-// Interceptor refreshes token
-// Request succeeds
-// User sees no interruption.

@@ -89,12 +89,14 @@ export default function AgentDashboardPage() {
   const activeTickets = useAgentTicketStore((s) => s.activeTickets);
   const loading = useAgentTicketStore((s) => s.loading);
   const error = useAgentTicketStore((s) => s.error);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const fetchActiveTickets = useAgentTicketStore((s) => s.fetchActiveTickets);
   const takeNextTicket = useAgentTicketStore((s) => s.takeNextTicket);
 
   useEffect(() => {
+    if (!accessToken) return;
     fetchActiveTickets();
-  }, [fetchActiveTickets]);
+  }, [fetchActiveTickets, accessToken]);
 
   const activeCount = activeTickets.length;
   const canTakeMore = activeCount < MAX_ACTIVE;
@@ -104,7 +106,13 @@ export default function AgentDashboardPage() {
 
   const handleTakeNext = async () => {
     const ticket = await takeNextTicket();
-    toast.success(`Ticket #${ticket.id.slice(-4)} assigned to you`);
+    toast.success(`Ticket #${ticket.id.slice(-4)} assigned to you`, {
+      style: {
+        borderRadius: "10px",
+        background: "#25671E",
+        color: "#fff",
+      },
+    });
   };
 
   if (loading && activeTickets.length === 0) {
@@ -193,9 +201,9 @@ export default function AgentDashboardPage() {
       </div>
 
       {/* Queue Section */}
-      {/* <div className="mt-8">
+      <div className="mt-8">
         <QueueSection />
-      </div> */}
+      </div>
     </div>
   );
 }

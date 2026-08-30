@@ -4,6 +4,7 @@ import { Clock, RefreshCw, Inbox } from "lucide-react";
 import PriorityBadge from "../ui/PriorityBadge";
 import EmptyState from "../ui/EmptyState";
 import type { Ticket } from "../../types/ticket";
+import { useAuthStore } from "../../store/authStore";
 
 function formatRelativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -16,13 +17,22 @@ function formatRelativeTime(iso: string): string {
   return `${days} day${days > 1 ? "s" : ""} ago`;
 }
 
+const QUEUE_ITEM_STYLES: Record<string, string> = {
+  URGENT: "bg-red-50/50 border-red-200 border-l-red-500",
+  HIGH: "bg-orange-50/50 border-orange-200 border-l-orange-500",
+  MEDIUM: "bg-blue-50/50 border-blue-200 border-l-blue-500",
+  LOW: "bg-slate-50/50 border-slate-200 border-l-slate-400",
+};
+
 const QueueItem = React.memo(function QueueItem({
   ticket,
 }: {
   ticket: Ticket;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div
+      className={`flex items-start gap-3 rounded-lg border border-l-4 p-4 shadow-sm ${QUEUE_ITEM_STYLES[ticket.priority]}`}
+    >
       <div className="mt-0.5 shrink-0">
         <PriorityBadge priority={ticket.priority} />
       </div>
@@ -44,11 +54,13 @@ const QueueItem = React.memo(function QueueItem({
 export default function QueueSection() {
   const queue = useAgentTicketStore((s) => s.queue);
   const loading = useAgentTicketStore((s) => s.loading);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const fetchQueue = useAgentTicketStore((s) => s.fetchQueue);
 
   useEffect(() => {
+    if (!accessToken) return;
     fetchQueue();
-  }, [fetchQueue]);
+  }, [fetchQueue, accessToken]);
 
   return (
     <div>

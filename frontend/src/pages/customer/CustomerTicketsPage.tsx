@@ -9,19 +9,22 @@ import ErrorState from "../../components/ui/ErrorState";
 import TicketDetailModal from "../../components/customer/TicketDetailModal";
 import CreateTicketModal from "../../components/customer/CreateTicketModal";
 import { PlusCircle, AlertCircle } from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
 
 export default function CustomerTicketsPage() {
   const tickets = useCustomerTicketStore((s) => s.tickets);
   const loading = useCustomerTicketStore((s) => s.loading);
   const error = useCustomerTicketStore((s) => s.error);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const fetchTickets = useCustomerTicketStore((s) => s.fetchTickets);
 
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
+    if (!accessToken) return;
     fetchTickets();
-  }, [fetchTickets]);
+  }, [fetchTickets, accessToken]);
 
   const sortedTickets = useMemo(() => {
     const activeFirst = ["WAITING", "ASSIGNED", "IN_PROGRESS"];

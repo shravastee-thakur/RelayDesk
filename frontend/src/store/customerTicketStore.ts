@@ -28,7 +28,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
     fetchTickets: async () => {
       set({ loading: true, error: null });
       try {
-        const res = await api.get("api/tickets/my");
+        const res = await api.get("/api/tickets/my");
 
         set({ tickets: res.data.data, loading: false });
       } catch (err: any) {
@@ -53,7 +53,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
     fetchTicketDetails: async (id: string) => {
       set({ loading: true, error: null });
       try {
-        const res = await api.get(`api/tickets/${id}`);
+        const res = await api.get(`/api/tickets/${id}`);
         set({ selectedTicket: res.data.data, loading: false });
       } catch (err: any) {
         const errorMessage =
@@ -76,7 +76,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
 
     fetchHistory: async (id: string) => {
       try {
-        const res = await api.get(`api/tickets/${id}/history`);
+        const res = await api.get(`/api/tickets/${id}/history`);
         set({ history: res.data.data });
       } catch (err: any) {
         const errorMessage =
@@ -100,7 +100,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
     cancelTicket: async (id: string) => {
       set({ loading: true, error: null });
       try {
-        const res = await api.patch(`api/tickets/${id}/cancel`);
+        const res = await api.patch(`/api/tickets/${id}/cancel`);
         if (res.data.success) {
           toast.success(res.data.message, {
             style: {

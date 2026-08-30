@@ -50,14 +50,16 @@ export default function CustomerDashboardPage() {
   const tickets = useCustomerTicketStore((s) => s.tickets);
   const loading = useCustomerTicketStore((s) => s.loading);
   const error = useCustomerTicketStore((s) => s.error);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const fetchTickets = useCustomerTicketStore((s) => s.fetchTickets);
 
   const [showCreate, setShowCreate] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!accessToken) return;
     fetchTickets();
-  }, [fetchTickets]);
+  }, [fetchTickets, accessToken]);
 
   const stats = useMemo(() => {
     const total = tickets.length;

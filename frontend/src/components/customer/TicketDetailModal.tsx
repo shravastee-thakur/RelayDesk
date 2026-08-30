@@ -3,19 +3,46 @@ import { X, Loader2, Clock, XCircle } from "lucide-react";
 import { useCustomerTicketStore } from "../../store/customerTicketStore";
 import StatusBadge from "../ui/StatusBadge";
 import PriorityBadge from "../ui/PriorityBadge";
+import type { TicketHistoryItem } from "../../types/ticket";
 
 interface TicketDetailModalProps {
   ticketId: string;
   onClose: () => void;
 }
 
-const HISTORY_LABELS: Record<string, string> = {
-  CREATED: "Ticket created",
-  ASSIGNED: "Agent assigned",
-  STATUS_CHANGED: "Status updated",
-  PRIORITY_CHANGED: "Priority updated",
-  MESSAGE: "New message",
-};
+// Pure function — maps backend enums to human sentences
+function getHistoryLabel(h: TicketHistoryItem): string {
+  switch (h.action) {
+    case "CREATED":
+      return "Ticket created";
+    case "ASSIGNED":
+      return "Agent assigned";
+    case "PRIORITY_CHANGED":
+      return "Priority updated";
+    case "MESSAGE":
+      return "New message";
+    case "STATUS_CHANGED": {
+      switch (h.newStatus) {
+        case "IN_PROGRESS":
+          return "Agent started working";
+        case "RESOLVED":
+          return "Ticket resolved";
+        case "CLOSED":
+          return "Ticket closed";
+        case "CANCELLED":
+          return "Ticket cancelled";
+        case "ASSIGNED":
+          return "Ticket assigned to agent";
+        case "WAITING":
+          return "Waiting for an agent";
+        default:
+          return "Status updated";
+      }
+    }
+    default:
+      return h.action;
+  }
+}
 
 export default React.memo(function TicketDetailModal({
   ticketId,
@@ -112,6 +139,7 @@ export default React.memo(function TicketDetailModal({
                 )}
               </div>
 
+              {/* Activity Timeline */}
               <div>
                 <h3 className="mb-3 text-sm font-semibold text-slate-900">
                   Activity
@@ -128,12 +156,7 @@ export default React.memo(function TicketDetailModal({
                       </div>
                       <div className="pb-4">
                         <p className="text-sm font-medium text-slate-900">
-                          {HISTORY_LABELS[h.action] || h.action}
-                          {h.newStatus && (
-                            <span className="ml-1 text-slate-500">
-                              → {h.newStatus.replace("_", " ")}
-                            </span>
-                          )}
+                          {getHistoryLabel(h)}
                         </p>
                         <p className="text-xs text-slate-400">
                           {new Date(h.createdAt).toLocaleString()}
@@ -147,7 +170,7 @@ export default React.memo(function TicketDetailModal({
           )}
         </div>
 
-        {/* Footer — Inline confirmation */}
+        {/* Footer */}
         {canCancel && (
           <div className="border-t border-slate-100 p-5">
             {!confirmCancel ? (

@@ -51,7 +51,13 @@ export default function LoginPage() {
   // Session expired notification
   useEffect(() => {
     if (searchParams.get("session") === "expired") {
-      toast.error("Your session expired. Please sign in again.");
+      toast.error("Your session expired. Please sign in again.", {
+        style: {
+          borderRadius: "10px",
+          background: "#25671E",
+          color: "#fff",
+        },
+      });
     }
   }, [searchParams]);
 
@@ -65,7 +71,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await api.post("api/users/otp-requests", { email, password });
+      const res = await api.post("/api/users/otp-requests", {
+        email,
+        password,
+      });
       console.log(res.data);
       if (res.data.success) {
         toast.success(res.data.message, {
@@ -94,7 +103,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { data } = await api.post("api/users/sessions", {
+      const { data } = await api.post("/api/users/sessions", {
         email,
         otp: code,
       });
@@ -133,8 +142,14 @@ export default function LoginPage() {
   const handleResend = async () => {
     setLoading(true);
     try {
-      await api.post("api/users/otp-requests", { email, password });
-      toast.success("New OTP sent");
+      await api.post("/api/users/otp-requests", { email, password });
+      toast.success("New OTP sent", {
+        style: {
+          borderRadius: "10px",
+          background: "#25671E",
+          color: "#fff",
+        },
+      });
       setTimeLeft(300);
       setOtp("");
     } catch (err: any) {

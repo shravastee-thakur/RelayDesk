@@ -1,8 +1,15 @@
 import React from "react";
 import { Clock, ArrowRight } from "lucide-react";
-import type { Ticket } from "../../types/ticket";
+import type { Ticket, TicketPriority } from "../../types/ticket";
 import StatusBadge from "./StatusBadge";
 import PriorityBadge from "./PriorityBadge";
+
+const CARD_STYLES: Record<TicketPriority, string> = {
+  URGENT: "bg-red-50/50 border-red-200 border-l-red-500",
+  HIGH: "bg-orange-50/50 border-orange-200 border-l-orange-500",
+  MEDIUM: "bg-blue-50/50 border-blue-200 border-l-blue-500",
+  LOW: "bg-slate-50/50 border-slate-200 border-l-slate-400",
+};
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -25,7 +32,7 @@ const TicketCard = React.memo(function TicketCard({
   return (
     <div
       onClick={onClick}
-      className="cursor-pointer rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
+      className={`cursor-pointer rounded-xl border border-l-4 p-5 shadow-sm transition-all hover:shadow-md ${CARD_STYLES[ticket.priority]}`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">

@@ -21,10 +21,11 @@ import CustomerDashboard from "./pages/customer/CustomerDashboard";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CustomerTicketsPage from "./pages/customer/CustomerTicketsPage";
+import AuthBootstrap from "./components/AuthBootstrap";
 
 const App = () => {
   return (
-    <>
+    <AuthBootstrap>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* ─── PUBLIC (with navbar) ─── */}
@@ -56,7 +57,7 @@ const App = () => {
 
         {/* ─── CATCH ALL ─── */}
       </Routes>
-    </>
+    </AuthBootstrap>
   );
 };
 

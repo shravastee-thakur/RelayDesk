@@ -29,7 +29,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await api.post("api/users/", form);
+      const res = await api.post("/api/users/", form);
       console.log(res.data);
 
       setSuccess(true);

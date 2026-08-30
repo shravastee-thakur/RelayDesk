@@ -3,16 +3,14 @@ import api from "../utils/api";
 import type { Ticket } from "../types/ticket";
 import toast from "react-hot-toast";
 
-const MAX_ACTIVE = 5;
-
 interface AgentTicketState {
   activeTickets: Ticket[];
-  // queue: Ticket[];
+  queue: Ticket[];
   loading: boolean;
   error: string | null;
 
   fetchActiveTickets: () => Promise<void>;
-  // fetchQueue: () => Promise<void>;
+  fetchQueue: () => Promise<void>;
   takeNextTicket: () => Promise<Ticket>;
   startTicket: (id: string) => Promise<void>;
   resolveTicket: (id: string) => Promise<void>;
@@ -20,14 +18,14 @@ interface AgentTicketState {
 
 export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   activeTickets: [],
-  // queue: [],
+  queue: [],
   loading: false,
   error: null,
 
   fetchActiveTickets: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await api.get("api/tickets/agent/active");
+      const res = await api.get("/api/tickets/agent/active");
 
       set({ activeTickets: res.data.data, loading: false });
     } catch (err: any) {
@@ -49,23 +47,23 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     }
   },
 
-  // fetchQueue: async () => {
-  //   set({ loading: true, error: null });
-  //   try {
-  //     const res = await api.get("api/tickets/queue");
-  //     set({ queue: res.data.data, loading: false });
-  //   } catch (err: any) {
-  //     set({
-  //       error: err.response?.data?.message || "Failed to load queue",
-  //       loading: false,
-  //     });
-  //   }
-  // },
+  fetchQueue: async () => {
+    set({ loading: true, error: null });
+    try {
+      const res = await api.get("/api/tickets/queue");
+      set({ queue: res.data.data, loading: false });
+    } catch (err: any) {
+      set({
+        error: err.response?.data?.message || "Failed to load queue",
+        loading: false,
+      });
+    }
+  },
 
   takeNextTicket: async () => {
     set({ loading: true, error: null });
     try {
-      const res = await api.post("api/tickets/assign-next");
+      const res = await api.post("/api/tickets/assign-next");
       const ticket: Ticket = res.data.data;
       set({
         activeTickets: [...get().activeTickets, ticket],
@@ -94,7 +92,7 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
 
   startTicket: async (id: string) => {
     try {
-      const res = await api.patch(`api/tickets/${id}/start`);
+      const res = await api.patch(`/api/tickets/${id}/start`);
       set({
         activeTickets: get().activeTickets.map((t) =>
           t.id === id ? res.data.data : t,
@@ -121,7 +119,7 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
 
   resolveTicket: async (id: string) => {
     try {
-      const res = await api.patch(`api/tickets/${id}/resolve`);
+      const res = await api.patch(`/api/tickets/${id}/resolve`);
       set({
         activeTickets: get().activeTickets.map((t) =>
           t.id === id ? res.data.data : t,
