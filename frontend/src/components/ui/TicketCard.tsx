@@ -1,18 +1,12 @@
 import React from "react";
 import { Clock, ArrowRight } from "lucide-react";
-import type { Ticket, TicketPriority } from "../../types/ticket";
+import type { Tickets } from "../../types/ticket";
 import StatusBadge from "./StatusBadge";
 import PriorityBadge from "./PriorityBadge";
-
-const CARD_STYLES: Record<TicketPriority, string> = {
-  URGENT: "bg-red-50/50 border-red-200 border-l-red-500",
-  HIGH: "bg-orange-50/50 border-orange-200 border-l-orange-500",
-  MEDIUM: "bg-blue-50/50 border-blue-200 border-l-blue-500",
-  LOW: "bg-slate-50/50 border-slate-200 border-l-slate-400",
-};
+import { CARD_STYLES } from "../../components/agent/priorityStyles";
 
 interface TicketCardProps {
-  ticket: Ticket;
+  ticket: Tickets;
   onClick?: () => void;
 }
 

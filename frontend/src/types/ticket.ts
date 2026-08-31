@@ -8,7 +8,7 @@ export type TicketStatus =
 
 export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
-export interface Ticket {
+export interface Tickets {
   id: string;
   customerId: string;
   agentId: string | null;
@@ -37,5 +37,15 @@ export interface TicketHistoryItem {
   newStatus?: TicketStatus;
   oldPriority?: TicketPriority;
   newPriority?: TicketPriority;
+  createdAt: string;
+}
+
+export interface TicketMessage {
+  id: string;
+  ticketId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  content: string;
   createdAt: string;
 }

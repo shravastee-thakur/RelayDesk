@@ -5,7 +5,6 @@ import {
   X,
   Ticket,
   LayoutDashboard,
-  PlusCircle,
   Users,
   BarChart3,
   LogOut,
@@ -54,8 +53,16 @@ const NAV_CONFIG: Record<UserRole, NavItem[]> = {
       href: "/agent/dashboard",
       icon: <LayoutDashboard size={18} />,
     },
-    { label: "Queue", href: "/queue", icon: <Inbox size={18} /> },
-    { label: "My Tickets", href: "/my-tickets", icon: <Ticket size={18} /> },
+    {
+      label: "Queue",
+      href: "/agent/queue",
+      icon: <Inbox size={18} />,
+    },
+    {
+      label: "My Tickets",
+      href: "/agent/tickets",
+      icon: <Ticket size={18} />,
+    },
   ],
   admin: [
     {

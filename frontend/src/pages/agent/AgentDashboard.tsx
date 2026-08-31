@@ -1,11 +1,19 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { useAgentTicketStore } from "../../store/agentTicketStore";
 import LoadingState from "../../components/ui/LoadingState";
 import ErrorState from "../../components/ui/ErrorState";
-import QueueSection from "../../components/agent/QueueSection";
-import { Ticket, Loader2, AlertTriangle, Inbox } from "lucide-react";
+import AgentTicketCard from "../../components/agent/AgentTicketCard";
+import {
+  Ticket,
+  Loader2,
+  AlertTriangle,
+  Inbox,
+  ArrowRight,
+} from "lucide-react";
 import toast from "react-hot-toast";
+import AgentTicketDetailModal from "../../components/agent/AgentTicketDetailModal";
 
 const MAX_ACTIVE = 5;
 
@@ -84,35 +92,68 @@ function getWorkloadTheme(count: number) {
   };
 }
 
+function formatRelativeTime(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days > 1 ? "s" : ""} ago`;
+}
+
 export default function AgentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const activeTickets = useAgentTicketStore((s) => s.activeTickets);
+  const queue = useAgentTicketStore((s) => s.queue);
+  const historyTickets = useAgentTicketStore((s) => s.historyTickets);
   const loading = useAgentTicketStore((s) => s.loading);
   const error = useAgentTicketStore((s) => s.error);
-  const accessToken = useAuthStore((s) => s.accessToken);
   const fetchActiveTickets = useAgentTicketStore((s) => s.fetchActiveTickets);
+  const fetchQueue = useAgentTicketStore((s) => s.fetchQueue);
+  const fetchAgentHistory = useAgentTicketStore((s) => s.fetchAgentHistory);
   const takeNextTicket = useAgentTicketStore((s) => s.takeNextTicket);
 
-  useEffect(() => {
-    if (!accessToken) return;
-    fetchActiveTickets();
-  }, [fetchActiveTickets, accessToken]);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
-  const activeCount = activeTickets.length;
+  useEffect(() => {
+    fetchActiveTickets();
+    fetchQueue();
+    fetchAgentHistory();
+  }, [fetchActiveTickets, fetchQueue, fetchAgentHistory]);
+
+  const activeCount = activeTickets.filter((t) =>
+    ["ASSIGNED", "IN_PROGRESS"].includes(t.status),
+  ).length;
   const canTakeMore = activeCount < MAX_ACTIVE;
   const remaining = MAX_ACTIVE - activeCount;
 
   const theme = useMemo(() => getWorkloadTheme(activeCount), [activeCount]);
 
+  const resolvedCount = historyTickets.filter((t) =>
+    ["RESOLVED", "CLOSED"].includes(t.status),
+  ).length;
+
+  const needsAttention = useMemo(() => {
+    const priorityOrder = ["URGENT", "HIGH", "MEDIUM", "LOW"];
+    return [...activeTickets]
+      .filter((t) => ["ASSIGNED", "IN_PROGRESS"].includes(t.status))
+      .sort(
+        (a, b) =>
+          priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority),
+      )
+      .slice(0, 3);
+  }, [activeTickets]);
+
   const handleTakeNext = async () => {
-    const ticket = await takeNextTicket();
-    toast.success(`Ticket #${ticket.id.slice(-4)} assigned to you`, {
-      style: {
-        borderRadius: "10px",
-        background: "#25671E",
-        color: "#fff",
-      },
-    });
+    try {
+      const ticket = await takeNextTicket();
+      toast.success(`Ticket #${ticket.id.slice(-4)} assigned to you`);
+    } catch {
+      // Error stored in store
+    }
   };
 
   if (loading && activeTickets.length === 0) {
@@ -200,10 +241,59 @@ export default function AgentDashboardPage() {
         </div>
       </div>
 
-      {/* Queue Section */}
-      <div className="mt-8">
-        <QueueSection />
+      {/* Today's Overview */}
+      <div className="mt-8 grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-2xl font-bold text-slate-900">{queue.length}</p>
+          <p className="mt-1 text-xs font-medium text-slate-500">Waiting</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-2xl font-bold text-slate-900">{activeCount}</p>
+          <p className="mt-1 text-xs font-medium text-slate-500">Active</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-2xl font-bold text-slate-900">{resolvedCount}</p>
+          <p className="mt-1 text-xs font-medium text-slate-500">Resolved</p>
+        </div>
       </div>
+
+      {/* Needs Attention */}
+      {needsAttention.length > 0 && (
+        <div className="mt-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-900">
+              Needs Attention
+            </h2>
+            <Link
+              to="/agent/tickets"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
+            >
+              View all active <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {needsAttention.map((ticket) => (
+              <AgentTicketCard
+                key={ticket.id}
+                ticket={ticket}
+                onClick={() => setDetailId(ticket.id)}
+                meta={
+                  ticket.status === "ASSIGNED"
+                    ? `Assigned ${formatRelativeTime(ticket.assignedAt || ticket.createdAt)}`
+                    : `Started ${formatRelativeTime(ticket.startedAt || ticket.assignedAt)}`
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {detailId && (
+        <AgentTicketDetailModal
+          ticketId={detailId}
+          onClose={() => setDetailId(null)}
+        />
+      )}
     </div>
   );
 }

@@ -22,6 +22,8 @@ import AgentDashboard from "./pages/agent/AgentDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CustomerTicketsPage from "./pages/customer/CustomerTicketsPage";
 import AuthBootstrap from "./components/AuthBootstrap";
+import AgentQueuePage from "./pages/agent/AgentQueuePage";
+import AgentTicketsPage from "./pages/agent/AgentTicketsPage";
 
 const App = () => {
   return (
@@ -48,6 +50,8 @@ const App = () => {
 
           <Route element={<ProtectedRoute allowedRoles={["agent"]} />}>
             <Route path="/agent/dashboard" element={<AgentDashboard />} />
+            <Route path="/agent/queue" element={<AgentQueuePage />} />
+            <Route path="/agent/tickets" element={<AgentTicketsPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
