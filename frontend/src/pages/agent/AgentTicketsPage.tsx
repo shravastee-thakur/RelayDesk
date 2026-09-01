@@ -6,6 +6,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
 import ErrorState from "../../components/ui/ErrorState";
 import { Ticket, CheckCircle2 } from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
 
 function formatRelativeTime(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -29,11 +30,13 @@ export default function AgentTicketsPage() {
   const error = useAgentTicketStore((s) => s.error);
   const fetchActiveTickets = useAgentTicketStore((s) => s.fetchActiveTickets);
   const fetchAgentHistory = useAgentTicketStore((s) => s.fetchAgentHistory);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   useEffect(() => {
+    if (!accessToken) return;
     fetchActiveTickets();
     fetchAgentHistory();
-  }, [fetchActiveTickets, fetchAgentHistory]);
+  }, [fetchActiveTickets, fetchAgentHistory, accessToken]);
 
   const active = useMemo(
     () =>

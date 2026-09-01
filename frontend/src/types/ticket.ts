@@ -44,8 +44,6 @@ export interface TicketMessage {
   id: string;
   ticketId: string;
   senderId: string;
-  senderName: string;
-  senderRole: string;
-  content: string;
+  message: string;
   createdAt: string;
 }

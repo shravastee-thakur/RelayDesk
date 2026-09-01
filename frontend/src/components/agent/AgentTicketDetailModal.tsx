@@ -5,7 +5,7 @@ import { useAgentTicketStore } from "../../store/agentTicketStore";
 import StatusBadge from "../ui/StatusBadge";
 import PriorityBadge from "../ui/PriorityBadge";
 import { getHistoryLabel } from "../../utils/historyLabels";
-import type { TicketPriority } from "../../types/ticket";
+import type { TicketPriority, TicketMessage } from "../../types/ticket";
 import toast from "react-hot-toast";
 
 interface AgentTicketDetailModalProps {
@@ -226,7 +226,7 @@ export default React.memo(function AgentTicketDetailModal({
     }
   };
 
-  const isAgentMessage = (role: string) => role === "agent" || role === "admin";
+  const isOwnMessage = (msg: TicketMessage) => msg.senderId === user?.id;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -293,26 +293,26 @@ export default React.memo(function AgentTicketDetailModal({
                       <p className="text-sm text-slate-400">No messages yet.</p>
                     )}
                     {messages.map((msg) => {
-                      const isAgent = isAgentMessage(msg.senderRole);
+                      const isOwn = isOwnMessage(msg);
                       return (
                         <div
                           key={msg.id}
-                          className={`flex ${isAgent ? "justify-end" : "justify-start"}`}
+                          className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                         >
                           <div
                             className={`max-w-[80%] rounded-xl px-3.5 py-2.5 text-sm ${
-                              isAgent
+                              isOwn
                                 ? "bg-blue-600 text-white"
                                 : "bg-slate-100 text-slate-900"
                             }`}
                           >
                             <p className="text-xs font-medium opacity-75 mb-0.5">
-                              {isAgent ? "You" : msg.senderName}
+                              {isOwn ? "You" : "Customer"}
                             </p>
-                            <p>{msg.content}</p>
+                            <p>{msg.message}</p>
                             <p
                               className={`mt-1 text-[10px] ${
-                                isAgent ? "text-blue-100" : "text-slate-400"
+                                isOwn ? "text-blue-100" : "text-slate-400"
                               }`}
                             >
                               {formatDateTime(msg.createdAt)}

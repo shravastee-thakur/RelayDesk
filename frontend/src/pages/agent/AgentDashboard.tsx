@@ -115,14 +115,16 @@ export default function AgentDashboardPage() {
   const fetchQueue = useAgentTicketStore((s) => s.fetchQueue);
   const fetchAgentHistory = useAgentTicketStore((s) => s.fetchAgentHistory);
   const takeNextTicket = useAgentTicketStore((s) => s.takeNextTicket);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   const [detailId, setDetailId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!accessToken) return;
     fetchActiveTickets();
     fetchQueue();
     fetchAgentHistory();
-  }, [fetchActiveTickets, fetchQueue, fetchAgentHistory]);
+  }, [fetchActiveTickets, fetchQueue, fetchAgentHistory, accessToken]);
 
   const activeCount = activeTickets.filter((t) =>
     ["ASSIGNED", "IN_PROGRESS"].includes(t.status),
