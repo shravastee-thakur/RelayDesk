@@ -9,7 +9,6 @@ import {
   Ticket,
   Loader2,
   AlertTriangle,
-  Inbox,
   ArrowRight,
 } from "lucide-react";
 import toast from "react-hot-toast";

@@ -1,25 +1,19 @@
 import { useEffect } from "react";
-import { connectSocket, disconnectSocket } from "../lib/socket";
-import {
-  setupTicketSocketListeners,
-  teardownTicketSocketListeners,
-} from "../lib/ticketSocket";
+import { useAuthStore } from "../store/authStore";
+import { useAgentTicketStore } from "../store/agentTicketStore";
 
-export const useSocketInit = (token: string | null) => {
+export function useSocketInit() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const token = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
+  const initSocket = useAgentTicketStore((s) => s.initSocket);
+  const disconnect = useAgentTicketStore((s) => s.disconnectSocket);
+
   useEffect(() => {
-    if (!token) return;
-
-    const socket = connectSocket(token);
-
-    if (socket.connected) {
-      setupTicketSocketListeners();
+    if (isAuthenticated && token && user?.id) {
+      initSocket(token, user.id);
     } else {
-      socket.once("connect", setupTicketSocketListeners);
+      disconnect();
     }
-
-    return () => {
-      teardownTicketSocketListeners();
-      disconnectSocket();
-    };
-  }, [token]);
-};
+  }, [isAuthenticated, token, user?.id, initSocket, disconnect]);
+}

@@ -7,6 +7,7 @@ import LoadingState from "../../components/ui/LoadingState";
 import ErrorState from "../../components/ui/ErrorState";
 import { Ticket, CheckCircle2 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import AgentTicketDetailModal from "../../components/agent/AgentTicketDetailModal";
 
 function formatRelativeTime(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -31,6 +32,8 @@ export default function AgentTicketsPage() {
   const fetchActiveTickets = useAgentTicketStore((s) => s.fetchActiveTickets);
   const fetchAgentHistory = useAgentTicketStore((s) => s.fetchAgentHistory);
   const accessToken = useAuthStore((s) => s.accessToken);
+
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -116,6 +119,7 @@ export default function AgentTicketsPage() {
             <AgentTicketCard
               key={ticket.id}
               ticket={ticket}
+              onClick={() => setDetailId(ticket.id)}
               meta={
                 tab === "active"
                   ? ticket.status === "ASSIGNED"
@@ -126,6 +130,13 @@ export default function AgentTicketsPage() {
             />
           ))}
         </div>
+      )}
+
+      {detailId && (
+        <AgentTicketDetailModal
+          ticketId={detailId}
+          onClose={() => setDetailId(null)}
+        />
       )}
     </div>
   );

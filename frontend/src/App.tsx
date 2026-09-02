@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { useSocketInit } from "./hooks/useSocketInit";
 
 // Layouts
 import MainLayout from "./components/MainLayout";
@@ -26,6 +27,8 @@ import AgentQueuePage from "./pages/agent/AgentQueuePage";
 import AgentTicketsPage from "./pages/agent/AgentTicketsPage";
 
 const App = () => {
+  useSocketInit();
+
   return (
     <AuthBootstrap>
       <Toaster position="top-right" reverseOrder={false} />
