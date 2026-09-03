@@ -4,6 +4,8 @@ import {
   connectSocket,
   disconnectSocket as disconnectSocketIO,
   getSocket,
+  joinTicketRoom,
+  leaveTicketRoom,
 } from "../lib/socket";
 import type {
   Tickets,
@@ -131,11 +133,14 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     try {
       const res = await api.post("/api/tickets/assign-next");
       const ticket: Tickets = res.data.data;
-      set({
-        activeTickets: [...get().activeTickets, ticket],
-        queue: get().queue.filter((t) => t.id !== ticket.id),
+      set((state) => ({
+        activeTickets: state.activeTickets.some((t) => t.id === ticket.id)
+          ? state.activeTickets
+          : [...state.activeTickets, ticket],
+        queue: state.queue.filter((t) => t.id !== ticket.id),
         loading: false,
-      });
+      }));
+
       return ticket;
     } catch (err: any) {
       const errorMessage =
@@ -158,16 +163,15 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await api.patch(`/api/tickets/${id}/start`);
-      set({
-        activeTickets: get().activeTickets.map((t) =>
-          t.id === id ? res.data.data : t,
+      const updated = res.data.data;
+      set((state) => ({
+        activeTickets: state.activeTickets.map((t) =>
+          t.id === id ? updated : t,
         ),
         selectedTicket:
-          get().selectedTicket?.id === id
-            ? res.data.data
-            : get().selectedTicket,
+          state.selectedTicket?.id === id ? updated : state.selectedTicket,
         loading: false,
-      });
+      }));
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to start ticket";
@@ -188,16 +192,15 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await api.patch(`/api/tickets/${id}/resolve`);
-      set({
-        activeTickets: get().activeTickets.map((t) =>
-          t.id === id ? res.data.data : t,
+      const updated = res.data.data;
+      set((state) => ({
+        activeTickets: state.activeTickets.map((t) =>
+          t.id === id ? updated : t,
         ),
         selectedTicket:
-          get().selectedTicket?.id === id
-            ? res.data.data
-            : get().selectedTicket,
+          state.selectedTicket?.id === id ? updated : state.selectedTicket,
         loading: false,
-      });
+      }));
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to resolve ticket";
@@ -215,11 +218,15 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   },
 
   fetchTicketDetails: async (id: string) => {
+    const prevId = get().selectedTicket?.id;
+    if (prevId && prevId !== id) leaveTicketRoom(prevId);
     set({ loading: true, error: null });
     try {
       const res = await api.get(`/api/tickets/${id}`);
       const ticket = res.data.data;
+
       set({ selectedTicket: ticket, loading: false });
+      joinTicketRoom(id);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to load ticket";
@@ -280,16 +287,15 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await api.patch(`/api/tickets/${id}/close`);
-      set({
+      const updated = res.data.data;
+      set((state) => ({
         selectedTicket:
-          get().selectedTicket?.id === id
-            ? res.data.data
-            : get().selectedTicket,
-        activeTickets: get().activeTickets.map((t) =>
-          t.id === id ? res.data.data : t,
+          state.selectedTicket?.id === id ? updated : state.selectedTicket,
+        activeTickets: state.activeTickets.map((t) =>
+          t.id === id ? updated : t,
         ),
         loading: false,
-      });
+      }));
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to close ticket";
@@ -309,15 +315,15 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   updatePriority: async (id: string, priority: TicketPriority) => {
     try {
       const res = await api.patch(`/api/tickets/${id}/priority`, { priority });
-      set({
+      const updated = res.data.data;
+      set((state) => ({
         selectedTicket:
-          get().selectedTicket?.id === id
-            ? res.data.data
-            : get().selectedTicket,
-        activeTickets: get().activeTickets.map((t) =>
-          t.id === id ? res.data.data : t,
+          state.selectedTicket?.id === id ? updated : state.selectedTicket,
+        activeTickets: state.activeTickets.map((t) =>
+          t.id === id ? updated : t,
         ),
-      });
+      }));
+      if (get().selectedTicket?.id === id) get().fetchHistory(id);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to update priority";
@@ -355,6 +361,8 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   },
 
   clearSelected: () => {
+    const ticketId = get().selectedTicket?.id;
+    if (ticketId) leaveTicketRoom(ticketId);
     set({ selectedTicket: null, messages: [], history: [], error: null });
   },
 

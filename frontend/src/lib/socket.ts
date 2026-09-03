@@ -30,3 +30,11 @@ export const disconnectSocket = () => {
   socket?.disconnect();
   socket = null;
 };
+
+export const joinTicketRoom = (ticketId: string) => {
+  socket?.emit("join_ticket", ticketId);
+};
+
+export const leaveTicketRoom = (ticketId: string) => {
+  socket?.emit("leave_ticket", ticketId);
+};

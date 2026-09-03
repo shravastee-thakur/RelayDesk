@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import api from "../utils/api";
-import type { Ticket, TicketHistoryItem } from "../types/ticket";
+import type { Tickets, TicketHistoryItem } from "../types/ticket";
 import toast from "react-hot-toast";
 
 interface CustomerTicketState {
-  tickets: Ticket[];
-  selectedTicket: Ticket | null;
+  tickets: Tickets[];
+  selectedTicket: Tickets | null;
   history: TicketHistoryItem[];
   loading: boolean;
   error: string | null;

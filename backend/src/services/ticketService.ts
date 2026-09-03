@@ -52,7 +52,7 @@ export const getTicketDetails = async (
   userId: string,
   userRole: string,
 ): Promise<TicketDocument> => {
-  const ticketDetails = await ticketRepo.findTicketById(ticketId);
+  const ticketDetails = await ticketRepo.findTicketWithUsers(ticketId);
   if (!ticketDetails) {
     throw new ApiError(404, "Tickets not found");
   }

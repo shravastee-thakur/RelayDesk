@@ -5,7 +5,7 @@ import AgentTicketCard from "../../components/agent/AgentTicketCard";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
 import ErrorState from "../../components/ui/ErrorState";
-import { Inbox, Ticket, Loader2, AlertTriangle } from "lucide-react";
+import { Inbox, Ticket, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/authStore";
 
@@ -27,7 +27,7 @@ export default function AgentQueuePage() {
   const error = useAgentTicketStore((s) => s.error);
   const fetchQueue = useAgentTicketStore((s) => s.fetchQueue);
   const takeNextTicket = useAgentTicketStore((s) => s.takeNextTicket);
-    const accessToken = useAuthStore((s) => s.accessToken);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   const activeCount = activeTickets.filter((t) =>
     ["ASSIGNED", "IN_PROGRESS"].includes(t.status),
@@ -35,7 +35,7 @@ export default function AgentQueuePage() {
   const canTakeMore = activeCount < 5;
 
   useEffect(() => {
-     if (!accessToken) return;
+    if (!accessToken) return;
     fetchQueue();
   }, [fetchQueue, accessToken]);
 

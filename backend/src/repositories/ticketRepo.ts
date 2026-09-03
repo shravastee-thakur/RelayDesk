@@ -32,6 +32,22 @@ export const findTicketById = async (
   return ticket ?? null;
 };
 
+export const findTicketWithUsers = async (ticketId: string) => {
+  const ticket = await db.query.tickets.findFirst({
+    where: eq(tickets.id, ticketId),
+    with: {
+      customer: {
+        columns: { name: true },
+      },
+      agent: {
+        columns: { id: true, name: true, email: true },
+      },
+    },
+  });
+
+  return ticket ?? null;
+};
+
 export const findCustomerTickets = async (
   customerId: string,
 ): Promise<TicketDocument[]> => {

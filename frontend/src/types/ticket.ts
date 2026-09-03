@@ -8,6 +8,11 @@ export type TicketStatus =
 
 export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
+export interface TicketUser {
+  name: string;
+  email?: string;
+}
+
 export interface Tickets {
   id: string;
   customerId: string;
@@ -21,6 +26,7 @@ export interface Tickets {
   assignedAt: string | null;
   startedAt: string | null;
   resolvedAt: string | null;
+  customer?: TicketUser;
 }
 
 export interface TicketHistoryItem {
@@ -44,6 +50,7 @@ export interface TicketMessage {
   id: string;
   ticketId: string;
   senderId: string;
+  senderName?: string;
   message: string;
   createdAt: string;
 }
