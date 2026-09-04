@@ -10,7 +10,6 @@ export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
 export interface TicketUser {
   name: string;
-  email?: string;
 }
 
 export interface Tickets {

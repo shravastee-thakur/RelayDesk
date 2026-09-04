@@ -1,29 +1,45 @@
-import { getSocket } from "./socket";
+import { getSocket, setOnConnectCallback } from "./socket";
 import { useAgentTicketStore } from "../store/agentTicketStore";
+import { useCustomerTicketStore } from "../store/customerTicketStore";
 import type { TicketMessage, TicketStatus } from "../types/ticket";
 
 let isSetup = false;
 
-export const setupTicketSocketListeners = () => {
+const registerListeners = () => {
   const s = getSocket();
   if (!s || isSetup) return;
   isSetup = true;
 
-  // ── Step 1: Real-time messages ──
+  console.log("[Socket Listeners] Registering listeners");
+
+  // ── Real-time messages for BOTH stores ──
   s.on("new_message", (msg: TicketMessage) => {
-    const state = useAgentTicketStore.getState();
+    console.log("[Socket] new_message received:", msg);
 
-    // Only update if this modal is open for this ticket
-    if (state.selectedTicket?.id !== msg.ticketId) return;
-    // Deduplicate in case fetchMessages and socket race
-    if (state.messages.find((m) => m.id === msg.id)) return;
+    // Update agent store
+    const agentState = useAgentTicketStore.getState();
+    if (agentState.selectedTicket?.id === msg.ticketId) {
+      if (!agentState.messages.find((m) => m.id === msg.id)) {
+        console.log("[Socket] Adding message to agent store");
+        useAgentTicketStore.setState({
+          messages: [...agentState.messages, msg],
+        });
+      }
+    }
 
-    useAgentTicketStore.setState({
-      messages: [...state.messages, msg],
-    });
+    // Update customer store
+    const customerState = useCustomerTicketStore.getState();
+    if (customerState.selectedTicket?.id === msg.ticketId) {
+      if (!customerState.messages.find((m) => m.id === msg.id)) {
+        console.log("[Socket] Adding message to customer store");
+        useCustomerTicketStore.setState({
+          messages: [...customerState.messages, msg],
+        });
+      }
+    }
   });
 
-  // ── Step 2: Status updates ──
+  // ── Status updates ──
   s.on(
     "ticket_status_updated",
     (data: { ticketId: string; status: TicketStatus; ticket?: any }) => {
@@ -60,32 +76,42 @@ export const setupTicketSocketListeners = () => {
     },
   );
 
-  // ── Step 3: Assignment updates ──
+  // ── Assignment updates ──
   s.on(
     "ticket_assigned",
     (data: { ticketId: string; agentId: string; ticket?: any }) => {
       const state = useAgentTicketStore.getState();
 
-      // Remove from queue immediately
       if (state.queue.some((t) => t.id === data.ticketId)) {
         useAgentTicketStore.setState({
           queue: state.queue.filter((t) => t.id !== data.ticketId),
         });
       }
 
-      // If another agent claimed this ticket while we have it open, update the modal
       if (state.selectedTicket?.id === data.ticketId && data.ticket) {
         useAgentTicketStore.setState({
           selectedTicket: { ...state.selectedTicket, ...data.ticket },
         });
       }
 
-      // Refresh active list so it appears if it was assigned to us
       if (state.activeTickets.length > 0) {
         state.fetchActiveTickets();
       }
     },
   );
+};
+
+export const setupTicketSocketListeners = () => {
+  const s = getSocket();
+
+  // If socket is already connected, register immediately
+  if (s?.connected) {
+    registerListeners();
+    return;
+  }
+
+  // Otherwise, wait for connection
+  setOnConnectCallback(registerListeners);
 };
 
 export const teardownTicketSocketListeners = () => {

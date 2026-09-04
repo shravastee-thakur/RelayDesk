@@ -1,58 +1,83 @@
 import React, { useEffect, useState } from "react";
-import { X, Loader2, Clock, XCircle } from "lucide-react";
+import { X, Loader2, Clock, XCircle, Send } from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
 import { useCustomerTicketStore } from "../../store/customerTicketStore";
 import StatusBadge from "../ui/StatusBadge";
 import PriorityBadge from "../ui/PriorityBadge";
 import type { TicketHistoryItem } from "../../types/ticket";
+import toast from "react-hot-toast";
+import { getHistoryLabel } from "../../utils/historyLabels";
 
 interface TicketDetailModalProps {
   ticketId: string;
   onClose: () => void;
 }
 
-// Pure function — maps backend enums to human sentences
-function getHistoryLabel(h: TicketHistoryItem): string {
-  switch (h.action) {
-    case "CREATED":
-      return "Ticket created";
-    case "ASSIGNED":
-      return "Agent assigned";
-    case "PRIORITY_CHANGED":
-      return "Priority updated";
-    case "MESSAGE":
-      return "New message";
-    case "STATUS_CHANGED": {
-      switch (h.newStatus) {
-        case "IN_PROGRESS":
-          return "Agent started working";
-        case "RESOLVED":
-          return "Ticket resolved";
-        case "CLOSED":
-          return "Ticket closed";
-        case "CANCELLED":
-          return "Ticket cancelled";
-        case "ASSIGNED":
-          return "Ticket assigned to agent";
-        case "WAITING":
-          return "Waiting for an agent";
-        default:
-          return "Status updated";
-      }
-    }
-    default:
-      return h.action;
-  }
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
+
+// ─── Isolated Composer ───
+const MessageComposer = React.memo(function MessageComposer({
+  ticketId,
+}: {
+  ticketId: string;
+}) {
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const sendMessage = useCustomerTicketStore((s) => s.sendMessage);
+
+  const handleSend = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+    await sendMessage(ticketId, text.trim());
+    setSending(false);
+    setText("");
+  };
+
+  return (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleSend()}
+        placeholder="Type a message..."
+        className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+      />
+      <button
+        onClick={handleSend}
+        disabled={sending || !text.trim()}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+      >
+        {sending ? (
+          <Loader2 size={14} className="animate-spin" />
+        ) : (
+          <Send size={14} />
+        )}
+        Send
+      </button>
+    </div>
+  );
+});
 
 export default React.memo(function TicketDetailModal({
   ticketId,
   onClose,
 }: TicketDetailModalProps) {
+  const user = useAuthStore((s) => s.user);
   const ticket = useCustomerTicketStore((s) => s.selectedTicket);
   const history = useCustomerTicketStore((s) => s.history);
+  const messages = useCustomerTicketStore((s) => s.messages);
   const loading = useCustomerTicketStore((s) => s.loading);
   const fetchDetails = useCustomerTicketStore((s) => s.fetchTicketDetails);
   const fetchHistory = useCustomerTicketStore((s) => s.fetchHistory);
+  const fetchMessages = useCustomerTicketStore((s) => s.fetchMessages);
   const cancelTicket = useCustomerTicketStore((s) => s.cancelTicket);
   const clearSelected = useCustomerTicketStore((s) => s.clearSelected);
 
@@ -62,12 +87,11 @@ export default React.memo(function TicketDetailModal({
   useEffect(() => {
     fetchDetails(ticketId);
     fetchHistory(ticketId);
-  }, [ticketId, fetchDetails, fetchHistory]);
+    fetchMessages(ticketId);
+  }, [ticketId, fetchDetails, fetchHistory, fetchMessages]);
 
   useEffect(() => {
-    return () => {
-      clearSelected();
-    };
+    return () => clearSelected();
   }, [clearSelected]);
 
   const handleCancel = async () => {
@@ -76,6 +100,7 @@ export default React.memo(function TicketDetailModal({
     setCancelling(false);
 
     if (!useCustomerTicketStore.getState().error) {
+      toast.success("Request cancelled");
       onClose();
     } else {
       setConfirmCancel(false);
@@ -115,6 +140,7 @@ export default React.memo(function TicketDetailModal({
             </div>
           ) : (
             <div className="space-y-6">
+              {/* Description */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">
                   Description
@@ -124,19 +150,63 @@ export default React.memo(function TicketDetailModal({
                 </p>
               </div>
 
+              {/* Meta */}
               <div className="flex flex-wrap gap-4 text-xs text-slate-500">
                 <div className="flex items-center gap-1">
                   <Clock size={12} />
                   <span>
-                    Created{" "}
-                    {ticket && new Date(ticket.createdAt).toLocaleString()}
+                    Created {ticket && formatDateTime(ticket.createdAt)}
                   </span>
                 </div>
                 {ticket?.assignedAt && (
                   <span className="text-blue-600">
-                    Assigned {new Date(ticket.assignedAt).toLocaleString()}
+                    Assigned {formatDateTime(ticket.assignedAt)}
                   </span>
                 )}
+              </div>
+
+              {/* Conversation */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                  Conversation
+                </h3>
+                <div className="space-y-3">
+                  {messages.length === 0 && (
+                    <p className="text-sm text-slate-400">No messages yet.</p>
+                  )}
+                  {messages.map((msg) => {
+                    const isMe = msg.senderId === user?.id;
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
+                            isMe
+                              ? "bg-blue-600 text-white"
+                              : "bg-white text-slate-900 shadow-sm"
+                          }`}
+                        >
+                          <p className="mb-0.5 text-xs font-medium opacity-75">
+                            {isMe ? "You" : msg.senderName || "Support Agent"}
+                          </p>
+                          <p>{msg.message}</p>
+                          <p
+                            className={`mt-1 text-[10px] ${
+                              isMe ? "text-blue-100" : "text-slate-400"
+                            }`}
+                          >
+                            {formatDateTime(msg.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4">
+                  <MessageComposer ticketId={ticketId} />
+                </div>
               </div>
 
               {/* Activity Timeline */}
@@ -144,22 +214,24 @@ export default React.memo(function TicketDetailModal({
                 <h3 className="mb-3 text-sm font-semibold text-slate-900">
                   Activity
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-0">
                   {history.length === 0 && (
                     <p className="text-sm text-slate-400">No activity yet</p>
                   )}
-                  {history.map((h) => (
+                  {history.map((h, idx) => (
                     <div key={h.id} className="flex gap-3">
                       <div className="relative flex flex-col items-center">
                         <div className="h-2 w-2 rounded-full bg-blue-500" />
-                        <div className="mt-1 h-full w-px bg-slate-200" />
+                        {idx !== history.length - 1 && (
+                          <div className="mt-1 h-full w-px bg-slate-200" />
+                        )}
                       </div>
-                      <div className="pb-4">
+                      <div className="pb-5">
                         <p className="text-sm font-medium text-slate-900">
                           {getHistoryLabel(h)}
                         </p>
                         <p className="text-xs text-slate-400">
-                          {new Date(h.createdAt).toLocaleString()}
+                          {formatDateTime(h.createdAt)}
                         </p>
                       </div>
                     </div>

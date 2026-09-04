@@ -96,7 +96,9 @@ const PriorityEditor = React.memo(function PriorityEditor({
   const handleSelect = async (p: TicketPriority) => {
     if (p === current) return;
     await updatePriority(ticketId, p);
-    toast.success(`Priority updated to ${p}`);
+    toast.success(`Priority updated to ${p}`, {
+      style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
+    });
     setOpen(false);
   };
 
@@ -136,6 +138,8 @@ export default React.memo(function AgentTicketDetailModal({
   const user = useAuthStore((s) => s.user);
   const ticket = useAgentTicketStore((s) => s.selectedTicket);
   const messages = useAgentTicketStore((s) => s.messages);
+  console.log(messages);
+
   const history = useAgentTicketStore((s) => s.history);
   const loading = useAgentTicketStore((s) => s.loading);
 
@@ -281,7 +285,7 @@ export default React.memo(function AgentTicketDetailModal({
                   </p>
                 </div>
 
-                {/* Conversation — dominant section */}
+                {/* Conversation */}
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
                   <h3 className="mb-3 text-sm font-semibold text-slate-900">
                     Conversation
@@ -295,7 +299,9 @@ export default React.memo(function AgentTicketDetailModal({
                       return (
                         <div
                           key={msg.id}
-                          className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                          className={`flex ${
+                            isMe ? "justify-end" : "justify-start"
+                          }`}
                         >
                           <div
                             className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
@@ -325,20 +331,23 @@ export default React.memo(function AgentTicketDetailModal({
                   </div>
                 </div>
 
-                {/* Activity Timeline — compact, below conversation */}
+                {/* Activity Timeline — connected dots */}
                 {history.length > 0 && (
                   <div>
-                    <h3 className="mb-2 text-sm font-semibold text-slate-900">
+                    <h3 className="mb-3 text-sm font-semibold text-slate-900">
                       Activity
                     </h3>
-                    <div className="space-y-2">
-                      {history.map((h) => (
+                    <div className="space-y-0">
+                      {history.map((h, idx) => (
                         <div key={h.id} className="flex gap-3">
-                          <div className="relative flex flex-col items-center pt-1.5">
-                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                          <div className="relative flex flex-col items-center">
+                            <div className="h-2 w-2 rounded-full bg-blue-500" />
+                            {idx !== history.length - 1 && (
+                              <div className="mt-1 h-full w-px bg-slate-200" />
+                            )}
                           </div>
-                          <div>
-                            <p className="text-sm text-slate-700">
+                          <div className="pb-5">
+                            <p className="text-sm font-medium text-slate-900">
                               {getHistoryLabel(h)}
                             </p>
                             <p className="text-xs text-slate-400">
@@ -368,11 +377,6 @@ export default React.memo(function AgentTicketDetailModal({
                         <p className="font-semibold text-slate-900">
                           {ticket.customer.name}
                         </p>
-                        {ticket.customer.email && (
-                          <p className="text-xs text-slate-500">
-                            {ticket.customer.email}
-                          </p>
-                        )}
                       </div>
                     ) : (
                       <p className="mt-0.5 font-medium text-slate-900">
@@ -392,6 +396,18 @@ export default React.memo(function AgentTicketDetailModal({
                       </p>
                     </div>
                   )}
+
+                  {/* Assigned To */}
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">
+                      Assigned To
+                    </p>
+                    <p className="mt-0.5 font-medium text-slate-900">
+                      {ticket?.agentId === user?.id
+                        ? "You"
+                        : ticket?.agentId || "Unassigned"}
+                    </p>
+                  </div>
 
                   {/* Priority */}
                   <div>

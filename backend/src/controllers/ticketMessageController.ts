@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import * as messageService from "../services/ticketMessageService.js";
 import { sendMessageSchema } from "../validators/messageValidator.js";
 import logger from "../utils/logger.js";
+import { emitToTicketRoom } from "../sockets/socketEmitter.js";
 
 export const sendMessage = async (
   req: Request,
@@ -22,6 +23,7 @@ export const sendMessage = async (
       validatedData,
     );
 
+    emitToTicketRoom(ticketId, "new_message", message);
     logger.info(`Message sent to ticket ${ticketId} by user ${userId}`);
 
     return res.status(201).json({

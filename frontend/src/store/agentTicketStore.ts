@@ -21,7 +21,6 @@ interface AgentTicketState {
   historyTickets: Tickets[];
   loading: boolean;
   error: string | null;
-
   selectedTicket: Tickets | null;
   messages: TicketMessage[];
   history: TicketHistoryItem[];
@@ -32,7 +31,6 @@ interface AgentTicketState {
   takeNextTicket: () => Promise<Tickets>;
   startTicket: (id: string) => Promise<void>;
   resolveTicket: (id: string) => Promise<void>;
-
   fetchTicketDetails: (id: string) => Promise<void>;
   fetchMessages: (id: string) => Promise<void>;
   fetchHistory: (id: string) => Promise<void>;
@@ -40,7 +38,6 @@ interface AgentTicketState {
   updatePriority: (id: string, priority: TicketPriority) => Promise<void>;
   sendMessage: (ticketId: string, content: string) => Promise<void>;
   clearSelected: () => void;
-
   initSocket: (token: string, userId: string) => void;
   disconnectSocket: () => void;
 }
@@ -58,7 +55,6 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   historyTickets: [],
   loading: false,
   error: null,
-
   selectedTicket: null,
   messages: [],
   history: [],
@@ -71,22 +67,15 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to load active tickets";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
 
   fetchQueue: async () => {
     if (get().queue.length > 0 && !get().error) return;
-
     set({ loading: true, error: null });
     try {
       const res = await api.get("/api/tickets/queue");
@@ -94,15 +83,9 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to load queue";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -115,15 +98,9 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to load history";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -140,20 +117,13 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
         queue: state.queue.filter((t) => t.id !== ticket.id),
         loading: false,
       }));
-
       return ticket;
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to take ticket";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
       throw err;
     }
@@ -172,18 +142,13 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
           state.selectedTicket?.id === id ? updated : state.selectedTicket,
         loading: false,
       }));
+      if (get().selectedTicket?.id === id) get().fetchHistory(id);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to start ticket";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -201,18 +166,13 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
           state.selectedTicket?.id === id ? updated : state.selectedTicket,
         loading: false,
       }));
+      if (get().selectedTicket?.id === id) get().fetchHistory(id);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to resolve ticket";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -223,22 +183,14 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await api.get(`/api/tickets/${id}`);
-      const ticket = res.data.data;
-
-      set({ selectedTicket: ticket, loading: false });
+      set({ selectedTicket: res.data.data, loading: false });
       joinTicketRoom(id);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to load ticket";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -250,15 +202,9 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to load messages";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -270,15 +216,9 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to load history";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -296,18 +236,13 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
         ),
         loading: false,
       }));
+      if (get().selectedTicket?.id === id) get().fetchHistory(id);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to close ticket";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -327,15 +262,9 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to update priority";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -343,19 +272,12 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   sendMessage: async (ticketId: string, content: string) => {
     try {
       await api.post(`/api/tickets/${ticketId}/messages`, { message: content });
-      get().fetchMessages(ticketId);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to send message";
-
       toast.error(errorMessage, {
-        style: {
-          borderRadius: "10px",
-          background: "#25671E",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
       });
-
       set({ error: errorMessage, loading: false });
     }
   },
@@ -369,7 +291,6 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   initSocket: (token: string, userId: string) => {
     const socket = connectSocket(token);
     if (!socket) return;
-
     if ((socket as any)._agentListeners) return;
     (socket as any)._agentListeners = true;
 
