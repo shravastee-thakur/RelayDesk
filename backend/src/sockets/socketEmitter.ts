@@ -15,3 +15,9 @@ export const emitToAgentDashboard = (event: string, data: any) => {
     io.to("agent_dashboard").emit(event, data);
   }
 };
+
+export const emitToUser = (userId: string, event: string, data: any) => {
+  if (io) {
+    io.to(`user:${userId}`).emit(event, data);
+  }
+};

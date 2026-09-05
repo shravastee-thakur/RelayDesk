@@ -138,8 +138,6 @@ export default React.memo(function AgentTicketDetailModal({
   const user = useAuthStore((s) => s.user);
   const ticket = useAgentTicketStore((s) => s.selectedTicket);
   const messages = useAgentTicketStore((s) => s.messages);
-  console.log(messages);
-
   const history = useAgentTicketStore((s) => s.history);
   const loading = useAgentTicketStore((s) => s.loading);
 

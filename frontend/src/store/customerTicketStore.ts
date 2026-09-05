@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import api from "../utils/api";
-import { joinTicketRoom, leaveTicketRoom } from "../lib/socket";
+import {
+  connectSocket,
+  disconnectSocket as disconnectSocketIO,
+  joinTicketRoom,
+  leaveTicketRoom,
+} from "../lib/socket";
 import type {
   Tickets,
   TicketHistoryItem,
@@ -23,6 +28,8 @@ interface CustomerTicketState {
   cancelTicket: (id: string) => Promise<void>;
   sendMessage: (ticketId: string, content: string) => Promise<void>;
   clearSelected: () => void;
+  initSocket: (token: string) => void;
+  disconnectSocket: () => void;
 }
 
 export const useCustomerTicketStore = create<CustomerTicketState>(
@@ -49,10 +56,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
             color: "#fff",
           },
         });
-        set({
-          error: errorMessage,
-          loading: false,
-        });
+        set({ error: errorMessage, loading: false });
       }
     },
 
@@ -75,10 +79,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
             color: "#fff",
           },
         });
-        set({
-          error: errorMessage,
-          loading: false,
-        });
+        set({ error: errorMessage, loading: false });
       }
     },
 
@@ -96,10 +97,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
             color: "#fff",
           },
         });
-        set({
-          error: errorMessage,
-          loading: false,
-        });
+        set({ error: errorMessage });
       }
     },
 
@@ -117,10 +115,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
             color: "#fff",
           },
         });
-        set({
-          error: errorMessage,
-          loading: false,
-        });
+        set({ error: errorMessage });
       }
     },
 
@@ -128,7 +123,6 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
       set({ loading: true, error: null });
       try {
         const res = await api.patch(`/api/tickets/${id}/cancel`);
-        get().fetchTickets();
         if (res.data.success) {
           toast.success(res.data.message, {
             style: {
@@ -152,10 +146,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
             color: "#fff",
           },
         });
-        set({
-          error: errorMessage,
-          loading: false,
-        });
+        set({ error: errorMessage, loading: false });
       }
     },
 
@@ -164,7 +155,6 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
         await api.post(`/api/tickets/${ticketId}/messages`, {
           message: content,
         });
-        // Socket listener will add the message instantly
       } catch (err: any) {
         const errorMessage =
           err.response?.data?.message || "Failed to send message";
@@ -175,10 +165,7 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
             color: "#fff",
           },
         });
-        set({
-          error: errorMessage,
-          loading: false,
-        });
+        set({ error: errorMessage });
       }
     },
 
@@ -186,6 +173,61 @@ export const useCustomerTicketStore = create<CustomerTicketState>(
       const ticketId = get().selectedTicket?.id;
       if (ticketId) leaveTicketRoom(ticketId);
       set({ selectedTicket: null, history: [], messages: [], error: null });
+    },
+
+    initSocket: (token: string) => {
+      const socket = connectSocket(token);
+      if (!socket) return;
+
+      if ((socket as any)._customerListenersAttached) return;
+      (socket as any)._customerListenersAttached = true;
+
+      socket.on("ticket_status_updated", (ticket: Tickets) => {
+        console.log(
+          "🔥 [Customer Store] RECEIVED ticket_status_updated:",
+          ticket,
+        );
+        set((state) => {
+          const next: Partial<CustomerTicketState> = {};
+
+          if (state.tickets.some((t) => t.id === ticket.id)) {
+            next.tickets = state.tickets.map((t) =>
+              t.id === ticket.id ? ticket : t,
+            );
+          }
+
+          if (state.selectedTicket?.id === ticket.id) {
+            next.selectedTicket = ticket;
+            setTimeout(() => get().fetchHistory(ticket.id), 100);
+          }
+
+          return next;
+        });
+      });
+
+      socket.on("ticket_assigned", (ticket: Tickets) => {
+        console.log("🔥 [Customer Store] RECEIVED ticket_assigned:", ticket);
+        set((state) => {
+          const next: Partial<CustomerTicketState> = {};
+
+          if (state.tickets.some((t) => t.id === ticket.id)) {
+            next.tickets = state.tickets.map((t) =>
+              t.id === ticket.id ? ticket : t,
+            );
+          }
+
+          if (state.selectedTicket?.id === ticket.id) {
+            next.selectedTicket = ticket;
+            setTimeout(() => get().fetchHistory(ticket.id), 100);
+          }
+
+          return next;
+        });
+      });
+    },
+
+    disconnectSocket: () => {
+      disconnectSocketIO();
     },
   }),
 );

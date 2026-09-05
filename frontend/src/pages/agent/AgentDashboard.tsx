@@ -5,14 +5,10 @@ import { useAgentTicketStore } from "../../store/agentTicketStore";
 import LoadingState from "../../components/ui/LoadingState";
 import ErrorState from "../../components/ui/ErrorState";
 import AgentTicketCard from "../../components/agent/AgentTicketCard";
-import {
-  Ticket,
-  Loader2,
-  AlertTriangle,
-  ArrowRight,
-} from "lucide-react";
+import { Ticket, Loader2, AlertTriangle, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import AgentTicketDetailModal from "../../components/agent/AgentTicketDetailModal";
+import { formatRelativeTime } from "../../utils/time";
 
 const MAX_ACTIVE = 5;
 
@@ -91,18 +87,6 @@ function getWorkloadTheme(count: number) {
   };
 }
 
-function formatRelativeTime(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const diff = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} day${days > 1 ? "s" : ""} ago`;
-}
-
 export default function AgentDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const activeTickets = useAgentTicketStore((s) => s.activeTickets);
@@ -125,17 +109,24 @@ export default function AgentDashboardPage() {
     fetchAgentHistory();
   }, [fetchActiveTickets, fetchQueue, fetchAgentHistory, accessToken]);
 
-  const activeCount = activeTickets.filter((t) =>
-    ["ASSIGNED", "IN_PROGRESS"].includes(t.status),
-  ).length;
+  const activeCount = useMemo(
+    () =>
+      activeTickets.filter((t) =>
+        ["ASSIGNED", "IN_PROGRESS"].includes(t.status),
+      ).length,
+    [activeTickets],
+  );
   const canTakeMore = activeCount < MAX_ACTIVE;
   const remaining = MAX_ACTIVE - activeCount;
 
   const theme = useMemo(() => getWorkloadTheme(activeCount), [activeCount]);
 
-  const resolvedCount = historyTickets.filter((t) =>
-    ["RESOLVED", "CLOSED"].includes(t.status),
-  ).length;
+  const resolvedCount = useMemo(
+    () =>
+      historyTickets.filter((t) => ["RESOLVED", "CLOSED"].includes(t.status))
+        .length,
+    [historyTickets],
+  );
 
   const needsAttention = useMemo(() => {
     const priorityOrder = ["URGENT", "HIGH", "MEDIUM", "LOW"];

@@ -112,6 +112,7 @@ export const assignNextTicket = async (
 
   socketEmitter.emitToAgentDashboard("ticket_assigned", ticket);
   socketEmitter.emitToTicketRoom(ticket.id, "ticket_assigned", ticket);
+  socketEmitter.emitToUser(ticket.customerId, "ticket_assigned", ticket);
 
   return ticket;
 };
@@ -201,6 +202,11 @@ export const updateTicketStatus = async (
 
   socketEmitter.emitToTicketRoom(updated.id, "ticket_status_updated", updated);
   socketEmitter.emitToAgentDashboard("ticket_status_updated", updated);
+  socketEmitter.emitToUser(
+    updated.customerId,
+    "ticket_status_updated",
+    updated,
+  );
 
   return updated;
 };
@@ -228,6 +234,18 @@ export const updateTicketPriority = async (
   if (!updatedTicket) {
     throw new ApiError(500, "Failed to update priority");
   }
+
+  socketEmitter.emitToTicketRoom(
+    updatedTicket.id,
+    "ticket_status_updated",
+    updatedTicket,
+  );
+  socketEmitter.emitToAgentDashboard("ticket_status_updated", updatedTicket);
+  socketEmitter.emitToUser(
+    updatedTicket.customerId,
+    "ticket_status_updated",
+    updatedTicket,
+  );
 
   return updatedTicket;
 };

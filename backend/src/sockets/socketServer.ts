@@ -31,6 +31,8 @@ export const initializeSocket = (server: http.Server) => {
       socket.join("agent_dashboard");
     }
 
+    socket.join(`user:${user.id}`);
+
     console.log(
       `[Socket.IO] New connection: ${socket.id} for User: ${user.id}`,
     );

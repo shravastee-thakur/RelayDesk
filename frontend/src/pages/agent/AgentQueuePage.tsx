@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useAgentTicketStore } from "../../store/agentTicketStore";
 import PageHeader from "../../components/ui/PageHeader";
 import AgentTicketCard from "../../components/agent/AgentTicketCard";
@@ -8,17 +8,7 @@ import ErrorState from "../../components/ui/ErrorState";
 import { Inbox, Ticket, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/authStore";
-
-function formatRelativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} day${days > 1 ? "s" : ""} ago`;
-}
+import { formatRelativeTime } from "../../utils/time";
 
 export default function AgentQueuePage() {
   const queue = useAgentTicketStore((s) => s.queue);
@@ -29,9 +19,13 @@ export default function AgentQueuePage() {
   const takeNextTicket = useAgentTicketStore((s) => s.takeNextTicket);
   const accessToken = useAuthStore((s) => s.accessToken);
 
-  const activeCount = activeTickets.filter((t) =>
-    ["ASSIGNED", "IN_PROGRESS"].includes(t.status),
-  ).length;
+  const activeCount = useMemo(
+    () =>
+      activeTickets.filter((t) =>
+        ["ASSIGNED", "IN_PROGRESS"].includes(t.status),
+      ).length,
+    [activeTickets],
+  );
   const canTakeMore = activeCount < 5;
 
   useEffect(() => {

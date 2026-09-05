@@ -3,7 +3,6 @@ import api from "../utils/api";
 import {
   connectSocket,
   disconnectSocket as disconnectSocketIO,
-  getSocket,
   joinTicketRoom,
   leaveTicketRoom,
 } from "../lib/socket";
@@ -75,7 +74,6 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   },
 
   fetchQueue: async () => {
-    if (get().queue.length > 0 && !get().error) return;
     set({ loading: true, error: null });
     try {
       const res = await api.get("/api/tickets/queue");
@@ -291,10 +289,13 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   initSocket: (token: string, userId: string) => {
     const socket = connectSocket(token);
     if (!socket) return;
-    if ((socket as any)._agentListeners) return;
-    (socket as any)._agentListeners = true;
+
+    // Prevent attaching listeners multiple times
+    if ((socket as any)._agentListenersAttached) return;
+    (socket as any)._agentListenersAttached = true;
 
     socket.on("ticket_created", (ticket: Tickets) => {
+      console.log("🔥 [Agent Store] RECEIVED ticket_created:", ticket);
       set((state) => {
         if (state.queue.find((t) => t.id === ticket.id)) return state;
         const newQueue = [...state.queue, ticket].sort((a, b) => {
@@ -310,6 +311,7 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     });
 
     socket.on("ticket_assigned", (ticket: Tickets) => {
+      console.log("🔥 [Agent Store] RECEIVED ticket_assigned:", ticket);
       set((state) => {
         const next: Partial<AgentTicketState> = {
           queue: state.queue.filter((t) => t.id !== ticket.id),
@@ -325,6 +327,7 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     });
 
     socket.on("ticket_status_updated", (ticket: Tickets) => {
+      console.log("🔥 [Agent Store] RECEIVED ticket_status_updated:", ticket);
       set((state) => {
         const next: Partial<AgentTicketState> = {};
         if (state.activeTickets.some((t) => t.id === ticket.id)) {
@@ -344,13 +347,6 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
   },
 
   disconnectSocket: () => {
-    const socket = getSocket();
-    if (socket) {
-      socket.off("ticket_created");
-      socket.off("ticket_assigned");
-      socket.off("ticket_status_updated");
-      (socket as any)._agentListeners = false;
-    }
     disconnectSocketIO();
   },
 }));
