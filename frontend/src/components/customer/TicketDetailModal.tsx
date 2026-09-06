@@ -3,8 +3,6 @@ import { X, Loader2, Clock, XCircle, Send } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useCustomerTicketStore } from "../../store/customerTicketStore";
 import StatusBadge from "../ui/StatusBadge";
-import PriorityBadge from "../ui/PriorityBadge";
-import type { TicketHistoryItem } from "../../types/ticket";
 import toast from "react-hot-toast";
 import { getHistoryLabel } from "../../utils/historyLabels";
 
@@ -121,7 +119,6 @@ export default React.memo(function TicketDetailModal({
             </h2>
             <div className="mt-1 flex gap-2">
               {ticket && <StatusBadge status={ticket.status} />}
-              {ticket && <PriorityBadge priority={ticket.priority} />}
             </div>
           </div>
           <button

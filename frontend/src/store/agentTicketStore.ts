@@ -295,7 +295,7 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     (socket as any)._agentListenersAttached = true;
 
     socket.on("ticket_created", (ticket: Tickets) => {
-      console.log("🔥 [Agent Store] RECEIVED ticket_created:", ticket);
+      console.log("[Agent Store] RECEIVED ticket_created:", ticket);
       set((state) => {
         if (state.queue.find((t) => t.id === ticket.id)) return state;
         const newQueue = [...state.queue, ticket].sort((a, b) => {
@@ -311,7 +311,7 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     });
 
     socket.on("ticket_assigned", (ticket: Tickets) => {
-      console.log("🔥 [Agent Store] RECEIVED ticket_assigned:", ticket);
+      console.log("[Agent Store] RECEIVED ticket_assigned:", ticket);
       set((state) => {
         const next: Partial<AgentTicketState> = {
           queue: state.queue.filter((t) => t.id !== ticket.id),
@@ -327,7 +327,7 @@ export const useAgentTicketStore = create<AgentTicketState>((set, get) => ({
     });
 
     socket.on("ticket_status_updated", (ticket: Tickets) => {
-      console.log("🔥 [Agent Store] RECEIVED ticket_status_updated:", ticket);
+      console.log("[Agent Store] RECEIVED ticket_status_updated:", ticket);
       set((state) => {
         const next: Partial<AgentTicketState> = {};
         if (state.activeTickets.some((t) => t.id === ticket.id)) {

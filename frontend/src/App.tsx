@@ -25,6 +25,8 @@ import CustomerTicketsPage from "./pages/customer/CustomerTicketsPage";
 import AuthBootstrap from "./components/AuthBootstrap";
 import AgentQueuePage from "./pages/agent/AgentQueuePage";
 import AgentTicketsPage from "./pages/agent/AgentTicketsPage";
+import AdminTicketsPage from "./pages/admin/AdminTicketsPage";
+import AdminAgentsPage from "./pages/admin/AdminAgentsPage";
 
 const App = () => {
   useSocketInit();
@@ -59,6 +61,8 @@ const App = () => {
 
           <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/tickets" element={<AdminTicketsPage />} />
+            <Route path="/admin/agents" element={<AdminAgentsPage />} />
           </Route>
         </Route>
 

@@ -41,19 +41,3 @@ export function useSocketInit() {
   ]);
 }
 
-/*
-
-1. Remove console.log
-2. Extract duplicated formatRelativeTime
-3. Fix Unnecessary Rerenders (Memoization)
-4. Fix Queue Cache Issue
-
-also 
-agentTicketStore.initSocket → handles ticket_created, ticket_assigned, ticket_status_updated for agent-specific updates
-customerTicketStore.initSocket → handles ticket_assigned, ticket_status_updated for customer-specific updates
-ticketSocket.ts → ONLY handles new_message for both stores' chat
-
-these are the changes ive made
-is that all ? we finally done? with this part
-
-*/

@@ -70,9 +70,8 @@ const NAV_CONFIG: Record<UserRole, NavItem[]> = {
       href: "/admin/dashboard",
       icon: <LayoutDashboard size={18} />,
     },
-    { label: "Tickets", href: "/tickets", icon: <Layers size={18} /> },
-    { label: "Agents", href: "/agents", icon: <Users size={18} /> },
-    { label: "Analytics", href: "/analytics", icon: <BarChart3 size={18} /> },
+    { label: "Tickets", href: "/admin/tickets", icon: <Layers size={18} /> },
+    { label: "Agents", href: "/admin/agents", icon: <Users size={18} /> },
   ],
 };
 

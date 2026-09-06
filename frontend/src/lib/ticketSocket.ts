@@ -4,13 +4,13 @@ import { useCustomerTicketStore } from "../store/customerTicketStore";
 import type { TicketMessage } from "../types/ticket";
 
 export const setupTicketSocketListeners = () => {
-  const s = getSocket();
-  if (!s) return;
+  const socket = getSocket();
+  if (!socket) return;
 
-  if ((s as any)._chatListenersAttached) return;
-  (s as any)._chatListenersAttached = true;
+  if ((socket as any)._chatListenersAttached) return;
+  (socket as any)._chatListenersAttached = true;
 
-  s.on("new_message", (msg: TicketMessage) => {
+  socket.on("new_message", (msg: TicketMessage) => {
     console.log("🔥 [Chat] RECEIVED new_message:", msg);
 
     const agentState = useAgentTicketStore.getState();

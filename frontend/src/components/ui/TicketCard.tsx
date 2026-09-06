@@ -2,8 +2,6 @@ import React from "react";
 import { Clock, ArrowRight } from "lucide-react";
 import type { Tickets } from "../../types/ticket";
 import StatusBadge from "./StatusBadge";
-import PriorityBadge from "./PriorityBadge";
-import { CARD_STYLES } from "../../components/agent/priorityStyles";
 
 interface TicketCardProps {
   ticket: Tickets;
@@ -26,7 +24,7 @@ const TicketCard = React.memo(function TicketCard({
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer rounded-xl border border-l-4 p-5 shadow-sm transition-all hover:shadow-md ${CARD_STYLES[ticket.priority]}`}
+      className={`cursor-pointer rounded-xl border border-l-4 p-5 shadow-sm transition-all hover:shadow-md bg-blue-50/80 border-blue-200 border-l-blue-500 hover:border-blue-300`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
@@ -38,7 +36,6 @@ const TicketCard = React.memo(function TicketCard({
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
         </div>
       </div>

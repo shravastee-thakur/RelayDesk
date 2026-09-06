@@ -1,19 +1,26 @@
 import React, { useEffect, useState, useRef } from "react";
 import { X, Loader2, Send, ChevronDown } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
-import { useAgentTicketStore } from "../../store/agentTicketStore";
+import { useAdminStore } from "../../store/adminStore";
 import StatusBadge from "../ui/StatusBadge";
 import PriorityBadge from "../ui/PriorityBadge";
 import { getHistoryLabel } from "../../utils/historyLabels";
-import type { TicketPriority } from "../../types/ticket";
-import toast from "react-hot-toast";
+import type { TicketPriority, TicketStatus } from "../../types/ticket";
 
-interface AgentTicketDetailModalProps {
+interface AdminTicketDetailModalProps {
   ticketId: string;
   onClose: () => void;
 }
 
 const PRIORITY_OPTIONS: TicketPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+const STATUS_OPTIONS: TicketStatus[] = [
+  "WAITING",
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "RESOLVED",
+  "CLOSED",
+  "CANCELLED",
+];
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
@@ -32,7 +39,7 @@ const MessageComposer = React.memo(function MessageComposer({
 }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const sendMessage = useAgentTicketStore((s) => s.sendMessage);
+  const sendMessage = useAdminStore((s) => s.sendMessage);
 
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -49,7 +56,7 @@ const MessageComposer = React.memo(function MessageComposer({
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        placeholder="Type your reply..."
+        placeholder="Type a message as admin..."
         className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
       />
       <button
@@ -77,7 +84,7 @@ const PriorityEditor = React.memo(function PriorityEditor({
   current: TicketPriority;
 }) {
   const [open, setOpen] = useState(false);
-  const updatePriority = useAgentTicketStore((s) => s.updatePriority);
+  const updatePriority = useAdminStore((s) => s.updatePriority);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,9 +92,8 @@ const PriorityEditor = React.memo(function PriorityEditor({
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
-      ) {
+      )
         setOpen(false);
-      }
     }
     if (open) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -96,9 +102,6 @@ const PriorityEditor = React.memo(function PriorityEditor({
   const handleSelect = async (p: TicketPriority) => {
     if (p === current) return;
     await updatePriority(ticketId, p);
-    toast.success(`Priority updated to ${p}`, {
-      style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
-    });
     setOpen(false);
   };
 
@@ -117,9 +120,7 @@ const PriorityEditor = React.memo(function PriorityEditor({
             <button
               key={p}
               onClick={() => handleSelect(p)}
-              className={`flex w-full items-center px-3 py-1.5 text-xs font-medium hover:bg-slate-50 ${
-                p === current ? "bg-blue-50 text-blue-700" : "text-slate-700"
-              }`}
+              className={`flex w-full items-center px-3 py-1.5 text-xs font-medium hover:bg-slate-50 ${p === current ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}
             >
               {p}
             </button>
@@ -130,24 +131,78 @@ const PriorityEditor = React.memo(function PriorityEditor({
   );
 });
 
+// Isolated Status Editor
+const StatusEditor = React.memo(function StatusEditor({
+  ticketId,
+  current,
+}: {
+  ticketId: string;
+  current: TicketStatus;
+}) {
+  const [open, setOpen] = useState(false);
+  const updateStatus = useAdminStore((s) => s.updateStatus);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      )
+        setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const handleSelect = async (s: TicketStatus) => {
+    if (s === current) return;
+    await updateStatus(ticketId, s);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold hover:bg-slate-50"
+      >
+        <StatusBadge status={current} />
+        <ChevronDown size={12} className="text-slate-400" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-10 mt-1 w-40 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+          {STATUS_OPTIONS.map((s) => (
+            <button
+              key={s}
+              onClick={() => handleSelect(s)}
+              className={`flex w-full items-center px-3 py-1.5 text-xs font-medium hover:bg-slate-50 ${s === current ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}
+            >
+              {s.replace("_", " ")}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
 // Main Modal
-export default React.memo(function AgentTicketDetailModal({
+export default React.memo(function AdminTicketDetailModal({
   ticketId,
   onClose,
-}: AgentTicketDetailModalProps) {
+}: AdminTicketDetailModalProps) {
   const user = useAuthStore((s) => s.user);
-  const ticket = useAgentTicketStore((s) => s.selectedTicket);
-  const messages = useAgentTicketStore((s) => s.messages);
-  const history = useAgentTicketStore((s) => s.history);
-  const loading = useAgentTicketStore((s) => s.loading);
+  const ticket = useAdminStore((s) => s.selectedTicket);
+  const messages = useAdminStore((s) => s.messages);
+  const history = useAdminStore((s) => s.history);
+  const loading = useAdminStore((s) => s.loading);
 
-  const fetchDetails = useAgentTicketStore((s) => s.fetchTicketDetails);
-  const fetchMessages = useAgentTicketStore((s) => s.fetchMessages);
-  const fetchHistory = useAgentTicketStore((s) => s.fetchHistory);
-  const startTicket = useAgentTicketStore((s) => s.startTicket);
-  const resolveTicket = useAgentTicketStore((s) => s.resolveTicket);
-  const closeTicket = useAgentTicketStore((s) => s.closeTicket);
-  const clearSelected = useAgentTicketStore((s) => s.clearSelected);
+  const fetchDetails = useAdminStore((s) => s.fetchTicketDetails);
+  const fetchMessages = useAdminStore((s) => s.fetchMessages);
+  const fetchHistory = useAdminStore((s) => s.fetchHistory);
+  const closeTicket = useAdminStore((s) => s.closeTicket);
+  const clearSelected = useAdminStore((s) => s.clearSelected);
 
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -161,76 +216,10 @@ export default React.memo(function AgentTicketDetailModal({
     return () => clearSelected();
   }, [clearSelected]);
 
-  // Historical tickets are read-only
-  const isReadOnly = ticket
-    ? ["RESOLVED", "CLOSED", "CANCELLED"].includes(ticket.status)
-    : false;
-
-  const handleAction = async (
-    action: () => Promise<void>,
-    successMsg: string,
-  ) => {
+  const handleClose = async () => {
     setActionLoading(true);
-    try {
-      await action();
-      toast.success(successMsg);
-    } catch {
-      // Error handled by store
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const lifecycleAction = () => {
-    if (!ticket || isReadOnly) return null;
-    switch (ticket.status) {
-      case "ASSIGNED":
-        return (
-          <button
-            onClick={() =>
-              handleAction(() => startTicket(ticketId), "Ticket started")
-            }
-            disabled={actionLoading}
-            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
-          >
-            {actionLoading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              "Start Working"
-            )}
-          </button>
-        );
-      case "IN_PROGRESS":
-        return (
-          <button
-            onClick={() =>
-              handleAction(() => resolveTicket(ticketId), "Ticket resolved")
-            }
-            disabled={actionLoading}
-            className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {actionLoading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              "Resolve Ticket"
-            )}
-          </button>
-        );
-      case "RESOLVED":
-        return (
-          <button
-            onClick={() =>
-              handleAction(() => closeTicket(ticketId), "Ticket closed")
-            }
-            disabled={actionLoading}
-            className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-          >
-            Close Ticket
-          </button>
-        );
-      default:
-        return null;
-    }
+    await closeTicket(ticketId);
+    setActionLoading(false);
   };
 
   return (
@@ -250,15 +239,14 @@ export default React.memo(function AgentTicketDetailModal({
                 </h2>
               </div>
               <div className="mt-1.5 flex items-center gap-2">
-                {ticket && <StatusBadge status={ticket.status} />}
-                {ticket && !isReadOnly && (
+                {ticket && (
+                  <StatusEditor ticketId={ticketId} current={ticket.status} />
+                )}
+                {ticket && (
                   <PriorityEditor
                     ticketId={ticketId}
                     current={ticket.priority}
                   />
-                )}
-                {ticket && isReadOnly && (
-                  <PriorityBadge priority={ticket.priority} />
                 )}
               </div>
             </div>
@@ -281,7 +269,6 @@ export default React.memo(function AgentTicketDetailModal({
             <div className="grid grid-cols-1 gap-0 lg:grid-cols-3">
               {/* Main Column */}
               <div className="space-y-6 p-5 lg:col-span-2">
-                {/* Description */}
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">
                     Description
@@ -291,7 +278,6 @@ export default React.memo(function AgentTicketDetailModal({
                   </p>
                 </div>
 
-                {/* Conversation */}
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
                   <h3 className="mb-3 text-sm font-semibold text-slate-900">
                     Conversation
@@ -305,25 +291,17 @@ export default React.memo(function AgentTicketDetailModal({
                       return (
                         <div
                           key={msg.id}
-                          className={`flex ${
-                            isMe ? "justify-end" : "justify-start"
-                          }`}
+                          className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
-                              isMe
-                                ? "bg-blue-600 text-white"
-                                : "bg-white text-slate-900 shadow-sm"
-                            }`}
+                            className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${isMe ? "bg-blue-600 text-white" : "bg-white text-slate-900 shadow-sm"}`}
                           >
                             <p className="mb-0.5 text-xs font-medium opacity-75">
-                              {isMe ? "You" : msg.senderName || "Customer"}
+                              {isMe ? "You (Admin)" : msg.senderName || "User"}
                             </p>
                             <p>{msg.message}</p>
                             <p
-                              className={`mt-1 text-[10px] ${
-                                isMe ? "text-blue-100" : "text-slate-400"
-                              }`}
+                              className={`mt-1 text-[10px] ${isMe ? "text-blue-100" : "text-slate-400"}`}
                             >
                               {formatDateTime(msg.createdAt)}
                             </p>
@@ -332,15 +310,11 @@ export default React.memo(function AgentTicketDetailModal({
                       );
                     })}
                   </div>
-                  {/* Composer hidden in read-only mode */}
-                  {!isReadOnly && (
-                    <div className="mt-4">
-                      <MessageComposer ticketId={ticketId} />
-                    </div>
-                  )}
+                  <div className="mt-4">
+                    <MessageComposer ticketId={ticketId} />
+                  </div>
                 </div>
 
-                {/* Activity Timeline */}
                 {history.length > 0 && (
                   <div>
                     <h3 className="mb-3 text-sm font-semibold text-slate-900">
@@ -376,7 +350,6 @@ export default React.memo(function AgentTicketDetailModal({
                   Ticket Information
                 </h3>
                 <div className="space-y-4 text-sm">
-                  {/* Customer */}
                   <div>
                     <p className="text-xs font-medium text-slate-500">
                       Customer
@@ -394,7 +367,6 @@ export default React.memo(function AgentTicketDetailModal({
                     )}
                   </div>
 
-                  {/* Created */}
                   {ticket?.createdAt && (
                     <div>
                       <p className="text-xs font-medium text-slate-500">
@@ -406,19 +378,17 @@ export default React.memo(function AgentTicketDetailModal({
                     </div>
                   )}
 
-                  {/* Assigned To */}
                   <div>
                     <p className="text-xs font-medium text-slate-500">
                       Assigned To
                     </p>
                     <p className="mt-0.5 font-medium text-slate-900">
-                      {ticket?.agentId === user?.id
-                        ? "You"
-                        : ticket?.agentId || "Unassigned"}
+                      {ticket?.agentId
+                        ? (ticket as any).agentName || ticket.agentId
+                        : "Unassigned"}
                     </p>
                   </div>
 
-                  {/* Priority */}
                   <div>
                     <p className="text-xs font-medium text-slate-500">
                       Priority
@@ -428,7 +398,6 @@ export default React.memo(function AgentTicketDetailModal({
                     </div>
                   </div>
 
-                  {/* Started */}
                   {ticket?.startedAt && (
                     <div>
                       <p className="text-xs font-medium text-slate-500">
@@ -440,7 +409,6 @@ export default React.memo(function AgentTicketDetailModal({
                     </div>
                   )}
 
-                  {/* Resolved */}
                   {ticket?.resolvedAt && (
                     <div>
                       <p className="text-xs font-medium text-slate-500">
@@ -457,10 +425,20 @@ export default React.memo(function AgentTicketDetailModal({
           )}
         </div>
 
-        {/* Bottom Action — hidden in read-only mode */}
-        {ticket && !isReadOnly && lifecycleAction() && (
+        {/* Bottom Action */}
+        {ticket && ticket.status === "RESOLVED" && (
           <div className="flex items-center justify-end border-t border-slate-100 px-5 py-4">
-            {lifecycleAction()}
+            <button
+              onClick={handleClose}
+              disabled={actionLoading}
+              className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            >
+              {actionLoading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                "Close Ticket"
+              )}
+            </button>
           </div>
         )}
       </div>

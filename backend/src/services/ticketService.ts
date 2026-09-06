@@ -227,6 +227,14 @@ export const updateTicketPriority = async (
     throw new ApiError(403, "You are not assigned to this ticket");
   }
 
+  // Priority can only be changed before resolution/closure/cancellation
+  if (["RESOLVED", "CLOSED", "CANCELLED"].includes(ticket.status)) {
+    throw new ApiError(
+      400,
+      `Cannot change priority of ${ticket.status.toLowerCase()} ticket`,
+    );
+  }
+
   const updatedTicket = await ticketRepo.updateTicket(ticketId, {
     priority: updateData.priority,
   });
@@ -241,11 +249,6 @@ export const updateTicketPriority = async (
     updatedTicket,
   );
   socketEmitter.emitToAgentDashboard("ticket_status_updated", updatedTicket);
-  socketEmitter.emitToUser(
-    updatedTicket.customerId,
-    "ticket_status_updated",
-    updatedTicket,
-  );
 
   return updatedTicket;
 };
