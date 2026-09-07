@@ -5,6 +5,7 @@ export interface AdminStats {
   inProgress: number;
   resolved: number;
   totalAgents: number;
+  onlineAgents: number;
 }
 
 export interface AdminAgent {

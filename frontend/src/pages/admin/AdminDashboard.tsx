@@ -86,6 +86,7 @@ export default function AdminDashboardPage() {
   const loading = useAdminStore((s) => s.loading);
   const error = useAdminStore((s) => s.error);
   const fetchStats = useAdminStore((s) => s.fetchStats);
+
   const fetchTickets = useAdminStore((s) => s.fetchTickets);
   const initSocket = useAdminStore((s) => s.initSocket);
   const disconnectSocket = useAdminStore((s) => s.disconnectSocket);

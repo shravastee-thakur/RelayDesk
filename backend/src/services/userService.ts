@@ -17,6 +17,7 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt.js";
 import * as emailService from "./emailService.js";
+import * as redisPresenceService from "./redisPresenceService.js";
 
 export type SafeUser = Omit<
   UserDocument,
@@ -210,6 +211,12 @@ export const logout = async (userId: string) => {
   await userRepo.updateUser(userId, { refreshToken: "" });
 };
 
-export const getAllAgents = async () => {
-  return userRepo.findAllAgents();
+export const getAgentsWithPresence = async () => {
+  const agents = await userRepo.findAllAgentsWithWorkload();
+  const onlineIds = await redisPresenceService.getOnlineAgentIds();
+
+  return agents.map((agent) => ({
+    ...agent,
+    isOnline: onlineIds.has(agent.id),
+  }));
 };

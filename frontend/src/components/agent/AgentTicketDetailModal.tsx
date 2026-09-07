@@ -163,7 +163,7 @@ export default React.memo(function AgentTicketDetailModal({
 
   // Historical tickets are read-only
   const isReadOnly = ticket
-    ? ["RESOLVED", "CLOSED", "CANCELLED"].includes(ticket.status)
+    ? ["CLOSED", "CANCELLED"].includes(ticket.status)
     : false;
 
   const handleAction = async (

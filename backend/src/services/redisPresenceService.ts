@@ -23,3 +23,9 @@ export const getOnlineAgentCount = async (): Promise<number> => {
   const keys = await redis.keys("agent:online:*");
   return keys.length;
 };
+
+export const getOnlineAgentIds = async (): Promise<Set<string>> => {
+  const keys = await redis.keys("agent:online:*");
+  const ids = keys.map((k) => k.split(":")[2]);
+  return new Set(ids);
+};

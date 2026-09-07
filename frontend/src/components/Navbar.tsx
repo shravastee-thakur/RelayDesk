@@ -202,13 +202,6 @@ export default function Navbar() {
                       {user.role}
                     </p>
                   </div>
-                  <Link
-                    to="/profile"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <Users size={16} />
-                    Profile
-                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"

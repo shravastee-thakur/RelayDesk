@@ -26,7 +26,7 @@ export const createAgent = async (
 };
 
 export const getStats = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ) => {
@@ -48,8 +48,7 @@ export const getAgents = async (
   next: NextFunction,
 ) => {
   try {
-    const agents = await userService.getAllAgents();
-
+    const agents = await userService.getAgentsWithPresence();
     return res.status(200).json({
       success: true,
       data: agents,

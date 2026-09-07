@@ -9,6 +9,8 @@ import { Users, Wifi, UserCheck, Battery, UserPlus, Inbox } from "lucide-react";
 import type { AdminAgent } from "../../types/admin";
 import { formatRelativeTime } from "../../utils/time";
 
+const MAX_CAPACITY = 5;
+
 const StatCard = React.memo(function StatCard({
   label,
   count,
@@ -40,7 +42,8 @@ const AgentCard = React.memo(function AgentCard({
 }: {
   agent: AdminAgent;
 }) {
-  const capacity = 5;
+  const workloadPercent = (agent.activeTickets / MAX_CAPACITY) * 100;
+  const isAtCapacity = agent.activeTickets >= MAX_CAPACITY;
 
   return (
     <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -55,10 +58,10 @@ const AgentCard = React.memo(function AgentCard({
           </p>
         </div>
         <span
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${
             agent.isOnline
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-slate-100 text-slate-600"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+              : "bg-slate-50 text-slate-600 border-slate-200"
           }`}
         >
           <span
@@ -70,33 +73,37 @@ const AgentCard = React.memo(function AgentCard({
         </span>
       </div>
 
-      {/* Stats */}
-      <div className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-        <div>
-          <p className="text-xs font-medium text-slate-500">Active Tickets</p>
-          <p className="mt-0.5 text-lg font-bold text-slate-900">
-            {agent.activeTickets}
-          </p>
+      {/* Workload Bar */}
+      <div className="mt-4">
+        <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-slate-500">
+          <span>Workload</span>
+          <span
+            className={
+              isAtCapacity ? "font-semibold text-red-600" : "text-slate-700"
+            }
+          >
+            {agent.activeTickets} / {MAX_CAPACITY}
+          </span>
         </div>
-        <div>
-          <p className="text-xs font-medium text-slate-500">Capacity</p>
-          <p className="mt-0.5 text-lg font-bold text-slate-900">
-            {agent.activeTickets}
-            <span className="text-sm font-normal text-slate-400">
-              /{capacity}
-            </span>
-          </p>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              isAtCapacity
+                ? "bg-red-500"
+                : agent.activeTickets >= 3
+                  ? "bg-amber-500"
+                  : "bg-blue-500"
+            }`}
+            style={{ width: `${Math.min(workloadPercent, 100)}%` }}
+          />
         </div>
       </div>
 
       {/* Footer */}
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+      <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
         <span className="text-xs text-slate-500">
           Joined {formatRelativeTime(agent.createdAt)}
         </span>
-        <button className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700">
-          View Tickets
-        </button>
       </div>
     </div>
   );
@@ -114,16 +121,20 @@ export default function AdminAgentsPage() {
     fetchAgents();
   }, [fetchAgents]);
 
-  // Calculate stats dynamically from the agent list
+  // Derive stats directly from the agents array to guarantee 100% accuracy
   const stats = useMemo(() => {
-    const total = agents.length;
-    const online = agents.filter((a) => a.isOnline).length;
-    const handling = agents.filter((a) => a.activeTickets > 0).length;
-    const capacity = agents.reduce(
-      (acc, a) => acc + Math.max(0, 5 - a.activeTickets),
-      0,
-    );
-    return { total, online, handling, capacity };
+    const totalAgents = agents.length;
+    const onlineAgents = agents.filter((a) => a.isOnline).length;
+    const handlingTickets = agents.filter((a) => a.activeTickets > 0).length;
+    const usedCapacity = agents.reduce((sum, a) => sum + a.activeTickets, 0);
+    const availableCapacity = totalAgents * MAX_CAPACITY - usedCapacity;
+
+    return {
+      totalAgents,
+      onlineAgents,
+      handlingTickets,
+      availableCapacity,
+    };
   }, [agents]);
 
   if (loading && agents.length === 0) {
@@ -144,7 +155,7 @@ export default function AdminAgentsPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <PageHeader
         title="Agents"
-        description="Manage support staff and monitor workload."
+        description="Manage support staff and monitor workload distribution."
         action={
           <button
             onClick={() => setShowCreate(true)}
@@ -160,25 +171,25 @@ export default function AdminAgentsPage() {
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard
           label="Total Agents"
-          count={stats.total} 
+          count={stats.totalAgents}
           icon={Users}
           colorClass="bg-blue-100 text-blue-600"
         />
         <StatCard
-          label="Online Agents"
-          count={stats.online}
+          label="Online Now"
+          count={stats.onlineAgents}
           icon={Wifi}
           colorClass="bg-emerald-100 text-emerald-600"
         />
         <StatCard
           label="Handling Tickets"
-          count={stats.handling}
+          count={stats.handlingTickets}
           icon={UserCheck}
           colorClass="bg-amber-100 text-amber-600"
         />
         <StatCard
-          label="Available Capacity"
-          count={stats.capacity}
+          label="Available Slots"
+          count={stats.availableCapacity}
           icon={Battery}
           colorClass="bg-indigo-100 text-indigo-600"
         />

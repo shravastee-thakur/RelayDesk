@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq, count, and, inArray } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { users } from "../db/schema/userSchema.js";
+import { tickets } from "../db/schema/ticketSchema.js";
 
 export type UserDocument = typeof users.$inferSelect;
 export type BaseData = typeof users.$inferInsert;
@@ -49,16 +50,23 @@ export const updateUser = async (
   return user;
 };
 
-export const findAllAgents = async () => {
-  const agents = await db
+export const findAllAgentsWithWorkload = async () => {
+  return db
     .select({
       id: users.id,
       name: users.name,
       email: users.email,
       createdAt: users.createdAt,
+      activeTickets: count(tickets.id).mapWith(Number),
     })
     .from(users)
-    .where(eq(users.role, "agent"));
-
-  return agents;
+    .leftJoin(
+      tickets,
+      and(
+        eq(users.id, tickets.agentId),
+        inArray(tickets.status, ["ASSIGNED", "IN_PROGRESS"])
+      )
+    )
+    .where(eq(users.role, "agent"))
+    .groupBy(users.id);
 };
