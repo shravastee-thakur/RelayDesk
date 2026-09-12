@@ -63,13 +63,10 @@ export default function PublicHero() {
                 Get Started
                 <ArrowRight size={18} />
               </Link>
-              <Link
-                to="/demo"
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-              >
+              <div className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2">
                 <Play size={18} className="text-blue-600" />
                 View Demo
-              </Link>
+              </div>
             </div>
 
             {/* Trust indicators */}
