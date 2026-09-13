@@ -42,7 +42,6 @@ export const authenticate = async (
     next();
   } catch (error) {
     logger.error(`AuthMiddleware Failure: ${(error as Error).message}`);
-    console.log(error); // remove for production
     next(error);
   }
 };

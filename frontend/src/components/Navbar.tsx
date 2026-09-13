@@ -6,7 +6,6 @@ import {
   Ticket,
   LayoutDashboard,
   Users,
-  BarChart3,
   LogOut,
   ChevronDown,
   Inbox,
@@ -135,7 +134,6 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-sm">
-      {/* Added `relative` so the absolute mobile menu anchors correctly */}
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* ─── Brand ─── */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0">
@@ -239,7 +237,6 @@ export default function Navbar() {
         </div>
 
         {/* ═══ MOBILE OVERLAY MENU ═══ */}
-        {/* Absolute: does NOT expand navbar height or push page content */}
         {mobileOpen && (
           <div className="absolute right-0 top-full z-50 w-1/2 h-[50vh] overflow-y-auto rounded-b-lg border border-t-0 border-slate-200 bg-white shadow-xl md:hidden">
             <div className="space-y-1 p-3">

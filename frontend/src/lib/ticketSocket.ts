@@ -11,7 +11,7 @@ export const setupTicketSocketListeners = () => {
   (socket as any)._chatListenersAttached = true;
 
   socket.on("new_message", (msg: TicketMessage) => {
-    console.log("🔥 [Chat] RECEIVED new_message:", msg);
+    console.log("[Chat] RECEIVED new_message:", msg);
 
     const agentState = useAgentTicketStore.getState();
     if (agentState.selectedTicket?.id === msg.ticketId) {

@@ -7,7 +7,6 @@ import StatusBadge from "../../components/ui/StatusBadge";
 import PriorityBadge from "../../components/ui/PriorityBadge";
 import LoadingState from "../../components/ui/LoadingState";
 import ErrorState from "../../components/ui/ErrorState";
-import AgentTicketDetailModal from "../../components/agent/AgentTicketDetailModal";
 import CreateAgentModal from "../../components/admin/CreateAgentModal";
 import {
   Users,

@@ -84,28 +84,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-/*
-
-Request sent
-    │
-    ├─ Has token? → Attach to header → Send
-    │
-    └─ No token? → Just send (will likely get 401)
-
-
-Response received
-    │
-    ├─ Success? → Return it
-    │
-    └─ 401 error?
-         │
-         ├─ First time? → Try refresh endpoint
-         │                   │
-         │                   ├─ Refresh works? → Save new token → Retry request
-         │                   │
-         │                   └─ Refresh fails? → Logout → Redirect to login
-         │
-         └─ Already retried? → Just fail (avoid infinite loop)
-
-*/

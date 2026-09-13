@@ -173,7 +173,9 @@ export default React.memo(function AgentTicketDetailModal({
     setActionLoading(true);
     try {
       await action();
-      toast.success(successMsg);
+      toast.success(successMsg, {
+        style: { borderRadius: "10px", background: "#25671E", color: "#fff" },
+      });
     } catch {
       // Error handled by store
     } finally {

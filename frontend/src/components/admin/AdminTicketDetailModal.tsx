@@ -44,7 +44,6 @@ export default React.memo(function AdminTicketDetailModal({
     return () => clearSelected();
   }, [clearSelected]);
 
-  // Safely access agent details if populated by backend
   const agentName = (ticket as any)?.agent?.name;
   const agentEmail = (ticket as any)?.agent?.email;
 

@@ -56,7 +56,6 @@ export default function AdminTicketsPage() {
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "ALL">(
     "ALL",
   );
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   const [detailId, setDetailId] = useState<string | null>(null);
 

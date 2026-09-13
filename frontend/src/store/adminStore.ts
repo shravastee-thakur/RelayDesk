@@ -121,7 +121,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     try {
       const res = await api.get(`/api/tickets/${id}`);
       set({ selectedTicket: res.data.data, loading: false });
-      joinTicketRoom(id); // Join room to observe context
+      joinTicketRoom(id);
     } catch (err: any) {
       const msg = err.response?.data?.message || "Failed to load ticket";
       toast.error(msg, {

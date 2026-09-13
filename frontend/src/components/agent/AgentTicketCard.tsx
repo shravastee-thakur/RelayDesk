@@ -10,7 +10,7 @@ import { CARD_STYLES } from "../../components/agent/priorityStyles";
 interface AgentTicketCardProps {
   ticket: Tickets;
   onClick?: () => void;
-  meta?: string; // e.g. "Waiting 4 min" or "Assigned 12 min ago"
+  meta?: string;
 }
 
 const AgentTicketCard = React.memo(function AgentTicketCard({
