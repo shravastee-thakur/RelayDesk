@@ -280,35 +280,33 @@ Agents are created through an admin-only workflow.
 
 ## Tech Stack
 ### Frontend
-React
-TypeScript
-React Router
-Zustand
-Axios
-Socket.IO Client
-Tailwind CSS
-React Hot Toast
-Lucide React
+- React
+- TypeScript
+- React Router
+- Zustand
+- Axios
+- Socket.IO Client
+- Tailwind CSS
+
 ### Backend
-Node.js
-TypeScript
-Express
-Socket.IO
-JWT
-bcrypt
-Zod
-Axios
+- Node.js
+- TypeScript
+- Express
+- Socket.IO
+- JWT
+- Zod
+- Axios
 ### Database
-PostgreSQL
-Neon PostgreSQL
-Drizzle ORM
+- PostgreSQL
+- Neon PostgreSQL
+- Drizzle ORM
 ### Caching / Real-Time State
-Redis
-ioredis
-Email
-Brevo
+- Redis
+- ioredis
+### Email
+- Brevo
 ### Testing / API Development
-Postman
+- Postman
 
 ## Engineering Decisions
 ### Why PostgreSQL?
